@@ -1,24 +1,24 @@
 #include <iostream>
-#include <set>
+#include <vector>
+#include <algorithm>
 
 void testcase() {
   int n; std::cin >> n;
-  std::set<int> x;
+  std::vector<int> x(n);
 
   for (int i = 0; i < n; ++i) {
-    int temp; std::cin >> temp;
-    x.insert(temp);
+    std::cin >> x[i];
   }
 
   int direction; std::cin >> direction;
   if (direction == 0) {
-    for (auto it = x.begin(); it != x.end(); ++it) {
-      std::cout << *it << ' ';
-    }
+    std::sort(x.begin(), x.end());
   } else {
-    for (auto it = x.rbegin(); it != x.rend(); ++it) {
-      std::cout << *it << ' ';
-    }
+    std::sort(x.begin(), x.end(), std::greater);
+  }
+
+  for (int i : x) {
+    std::cout << i << ' ';
   }
 
   std::cout << std::endl;
