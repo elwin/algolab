@@ -14,7 +14,7 @@ void testcase() {
   if (direction == 0) {
     std::sort(x.begin(), x.end());
   } else {
-    std::sort(x.begin(), x.end(), std::greater);
+    std::sort(x.begin(), x.end(), std::greater<>());
   }
 
   for (int i : x) {
