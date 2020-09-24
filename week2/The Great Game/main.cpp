@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <set>
 
 bool holmes_wins(int move_number, int r, int b);
 
@@ -9,7 +10,7 @@ bool holmes_wins(int move_number, int r, int b);
 // -1: Not set yet
 std::vector<std::vector<std::vector<bool>>> dp;
 std::vector<std::vector<std::vector<bool>>> dp_seen;
-std::vector<std::vector<int>> connections;
+std::vector<std::set<int>> connections;
 int n;
 
 // +---+----------+-------+
@@ -83,12 +84,10 @@ bool holmes_wins(int move_number, int r, int b) {
 
 int testcase() {
 	int m; std::cin >> n >> m;
-	connections = std::vector<std::vector<int>>(n);
+	connections = std::vector<std::set<int>>(n);
 	for (int i = 0; i < n; ++i) {
-		connections[i] = std::vector<int>();
+		connections[i] = std::set<int>();
 	}
-
-	std::cout << "Initialized conns" << std::endl;
 
 	dp = std::vector<std::vector<std::vector<bool>>>(4);
 	dp_seen = std::vector<std::vector<std::vector<bool>>>(4);
@@ -101,21 +100,14 @@ int testcase() {
 		}
 	}
 
-	std::cout << "Initialized dp" << std::endl;
-
-
 	int r, b; std::cin >> r >> b;
 	r--; b--;
-
-	int maxDiff = 0;
 
 	for (int i = 0; i < m; ++i) {
 		int u, v; std::cin >> u >> v;
 		u--; v--;
-		connections[u].push_back(v);
+		connections[u].insert(v);
 	}
-
-	std::cout << "Filled" << std::endl;
 
 	// 0 if Holmes wins, 1 otherwise
 	return !holmes_wins(0, r, b);
