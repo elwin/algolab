@@ -7,7 +7,6 @@ bool holmes_wins(int move_number, int r, int b);
 // move_number, r, b
 // 0: Moriarty wins
 // 1: Holmes wins
-// -1: Not set yet
 std::vector<std::vector<std::vector<bool>>> dp;
 std::vector<std::vector<std::vector<bool>>> dp_seen;
 std::vector<std::set<int>> connections;
