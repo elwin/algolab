@@ -55,6 +55,10 @@ int testcase() {
 
 		// std::cout << std::endl;
 
+		if (min_length == n) {
+			return min_length;
+		}
+
 		if (valid(letter_cache)) {		
 			int length = 0;
 			if (j > 0) {
