@@ -7,18 +7,16 @@ std::vector<int> values;
 int k; int m;
 
 // turn (0, m - 1), i, j
-std::vector<std::vector<std::vector<int>>> dp;
-std::vector<std::vector<std::vector<bool>>> dp_seen;
+std::vector<std::vector<int>> dp;
+std::vector<std::vector<bool>> dp_seen;
 
 int max_revenue_cached(int turn, int i, int j) {
-	turn = turn % m;
-
-	if (!dp_seen[turn][i][j - 1]) {
-		dp[turn][i][j - 1] = max_revenue(turn, i, j);
-		dp_seen[turn][i][j - 1] = true;
+	if (!dp_seen[i][j - 1]) {
+		dp[i][j - 1] = max_revenue(turn, i, j);
+		dp_seen[i][j - 1] = true;
 	}
 
-	return dp[turn][i][j - 1];
+	return dp[i][j - 1];
 }
 
 // revenue from value[i] up to value[j - 1]
@@ -50,15 +48,11 @@ int testcase() {
 	std::cin >> m;
 	std::cin >> k;
 
-	dp = std::vector<std::vector<std::vector<int>>>(m);
-	dp_seen = std::vector<std::vector<std::vector<bool>>>(m);
-	for (int i = 0; i < m; ++i) {
-		dp[i] = std::vector<std::vector<int>>(n);
-		dp_seen[i] = std::vector<std::vector<bool>>(n);
-		for (int j = 0; j < n; ++j) {
-			dp[i][j] = std::vector<int>(n);
-			dp_seen[i][j] = std::vector<bool>(n);
-		}
+	dp = std::vector<std::vector<int>>(n);
+	dp_seen = std::vector<std::vector<bool>>(n);
+	for (int i = 0; i < n; ++i) {
+		dp[i] = std::vector<int>(n);
+		dp_seen[i] = std::vector<bool>(n);
 	}
 
 	values = std::vector<int>(n);

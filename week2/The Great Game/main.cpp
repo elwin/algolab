@@ -7,8 +7,8 @@ bool holmes_wins(int move_number, int r, int b);
 // move_number, r, b
 // 0: Moriarty wins
 // 1: Holmes wins
-std::vector<std::vector<std::vector<bool>>> dp;
-std::vector<std::vector<std::vector<bool>>> dp_seen;
+std::vector<std::vector<bool>> dp;
+std::vector<std::vector<bool>> dp_seen;
 std::vector<std::set<int>> connections;
 int n;
 
@@ -21,14 +21,12 @@ int n;
 // | 3 | Moriarty | Red   |
 // +---+----------+-------+
 bool holmes_wins_cache(int move_number, int r, int b) {
-	move_number = move_number % 4;
-
-	if (!dp_seen[move_number][r][b]) {
-		dp[move_number][r][b] = holmes_wins(move_number, r, b);
-		dp_seen[move_number][r][b] = true;
+	if (!dp_seen[r][b]) {
+		dp[r][b] = holmes_wins(move_number, r, b);
+		dp_seen[r][b] = true;
 	}
 
-	return dp[move_number][r][b];
+	return dp[r][b];
 }
 
 bool holmes_wins(int move_number, int r, int b) {
@@ -88,16 +86,12 @@ int testcase() {
 		connections[i] = std::set<int>();
 	}
 
-	dp = std::vector<std::vector<std::vector<bool>>>(4);
-	dp_seen = std::vector<std::vector<std::vector<bool>>>(4);
-	for (int i = 0; i < 4; ++i) {
-		dp[i] = std::vector<std::vector<bool>>(n);
-		dp_seen[i] = std::vector<std::vector<bool>>(n);
+		dp = std::vector<std::vector<bool>>(n);
+		dp_seen = std::vector<std::vector<bool>>(n);
 		for (int j = 0; j < n; ++j) {
-			dp[i][j] = std::vector<bool>(n);
-			dp_seen[i][j] = std::vector<bool>(n);
+			dp[j] = std::vector<bool>(n);
+			dp_seen[j] = std::vector<bool>(n);
 		}
-	}
 
 	int r, b; std::cin >> r >> b;
 	r--; b--;
