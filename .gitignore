@@ -1,2 +1,9 @@
 prog
+main
 **/prog.dSYM
+
+# CMake stuff
+**/CMakeFiles
+cmake_install.cmake
+CMake*
+Makefile
