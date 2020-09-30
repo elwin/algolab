@@ -2,15 +2,22 @@
 #include <vector>
 #include <set>
 
-bool holmes_wins(int move_number, int r, int b);
+bool holmes_wins(int move, int r, int b);
 
-// move_number, r, b
-// 0: Moriarty wins
-// 1: Holmes wins
-std::vector<std::vector<bool>> dp;
-std::vector<std::vector<bool>> dp_seen;
-std::vector<std::set<int>> connections;
 int n;
+std::vector<std::vector<int>> connections;
+std::vector<std::vector<std::vector<bool>>> dp;
+std::vector<std::vector<std::vector<bool>>> dp_seen;
+
+bool holmes_wins_cached(int move, int r, int b) {
+	move = move % 4;
+	if (!dp_seen[move][r][b]) {
+		dp[move][r][b] = holmes_wins(move, r, b);
+		dp_seen[move][r][b] = true;
+	}
+
+	return dp[move][r][b];
+}
 
 // +---+----------+-------+
 // |   |  Player  | Color |
@@ -20,90 +27,92 @@ int n;
 // | 2 | Holmes   | Black |
 // | 3 | Moriarty | Red   |
 // +---+----------+-------+
-bool holmes_wins_cache(int move_number, int r, int b) {
-	if (!dp_seen[r][b]) {
-		dp[r][b] = holmes_wins(move_number, r, b);
-		dp_seen[r][b] = true;
+bool holmes_wins(int move, int r, int b) {
+	if (r == n - 1) { return true; }
+	if (b == n - 1) { return false; }
+
+	move = move % 4;
+	
+	if (move == 0) {
+		for (int next: connections[r]) {
+			if (holmes_wins_cached(move + 1, next, b)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
-	return dp[r][b];
-}
-
-bool holmes_wins(int move_number, int r, int b) {
-	if (r == n - 1) {
+	if (move == 1) {
+		for (int next: connections[b]) {
+			if (!holmes_wins_cached(move + 1, r, next)) {
+				return false;
+			}
+		}
 		return true;
-	} else if (b == n - 1) {
-		return false;
 	}
 
-	if (move_number % 4 == 0) {
-		for (int link: connections[r]) {
-			if (holmes_wins_cache(move_number + 1, link, b)) {
+	if (move == 2) {
+		for (int next: connections[b]) {
+			if (holmes_wins_cached(move + 1, r, next)) {
 				return true;
 			}
 		}
-
 		return false;
 	}
 
-	if (move_number % 4 == 1) {
-		for (int link: connections[b]) {
-			if (!holmes_wins_cache(move_number + 1, r, link)) {
+	if (move == 3) {
+		for (int next: connections[r]) {
+			if (!holmes_wins_cached(move + 1, next, b)) {
 				return false;
 			}
 		}
-
-		return true;	
+		return true;
 	}
 
-	if (move_number % 4 == 2) {
-		for (int link: connections[b]) {
-			if (holmes_wins_cache(move_number + 1, r, link)) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	if (move_number % 4 == 3) {
-		for (int link: connections[r]) {
-			if (!holmes_wins_cache(move_number + 1, link, b)) {
-				return false;
-			}
-		}
-
-		return true;	
-	}
-
-	return -1;
+	// should never occur
+	return false;
 }
 
 int testcase() {
-	int m; std::cin >> n >> m;
-	connections = std::vector<std::set<int>>(n);
-	for (int i = 0; i < n; ++i) {
-		connections[i] = std::set<int>();
-	}
+	int m, r, b; std::cin >> n >> m >> r >> b;
+	std::cout << "n: " << n << " m: " << m << " r: " << r << " b: " << b << std::endl;
 
-		dp = std::vector<std::vector<bool>>(n);
-		dp_seen = std::vector<std::vector<bool>>(n);
-		for (int j = 0; j < n; ++j) {
-			dp[j] = std::vector<bool>(n);
-			dp_seen[j] = std::vector<bool>(n);
-		}
-
-	int r, b; std::cin >> r >> b;
-	r--; b--;
-
+	connections = std::vector<std::vector<int>>(n);
 	for (int i = 0; i < m; ++i) {
 		int u, v; std::cin >> u >> v;
-		u--; v--;
-		connections[u].insert(v);
+
+		connections[u - 1].push_back(v - 1);
 	}
 
-	// 0 if Holmes wins, 1 otherwise
-	return !holmes_wins(0, r, b);
+	dp = std::vector<std::vector<std::vector<bool>>>(4);
+	dp_seen = std::vector<std::vector<std::vector<bool>>>(4);
+	for (int move = 0; move < 4; ++move) {
+		dp[move] = std::vector<std::vector<bool>>(n);
+		dp_seen[move] = std::vector<std::vector<bool>>(n);
+		for (int i = 0; i < n; ++i) {
+			dp[move][i] = std::vector<bool>(n);
+			dp_seen[move][i] = std::vector<bool>(n);
+		}
+	}
+
+	// std::cout << "prepared" << std::endl;
+
+	bool result = holmes_wins_cached(0, r - 1, b - 1) == true ? 0 : 1;
+
+	// for (int move = 0; move < 4; ++move) {
+	// 	for (int i = 0; i < n; ++i) {
+	// 		for (int j = 0; j < n; ++j) {
+	// 			std::cout << dp_seen[move][i][j] << " ";
+	// 		}
+	// 		std::cout << std::endl;
+	// 	}
+	// 	std::cout << "==" << std::endl;	
+	// }
+
+
+	// std::cout << "calculated" << std::endl;
+
+	return result;
 }
 
 int main() {
