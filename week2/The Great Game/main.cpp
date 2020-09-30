@@ -69,8 +69,7 @@ bool holmes_wins(int move, int r, int b) {
 		return true;
 	}
 
-	// should never occur
-	return false;
+	throw "unexpected case"
 }
 
 int testcase() {
