@@ -74,7 +74,6 @@ bool holmes_wins(int move, int r, int b) {
 
 int testcase() {
 	int m, r, b; std::cin >> n >> m >> r >> b;
-	std::cout << "n: " << n << " m: " << m << " r: " << r << " b: " << b << std::endl;
 
 	connections = std::vector<std::vector<int>>(n);
 	for (int i = 0; i < m; ++i) {
@@ -94,24 +93,7 @@ int testcase() {
 		}
 	}
 
-	// std::cout << "prepared" << std::endl;
-
-	bool result = holmes_wins_cached(0, r - 1, b - 1) == true ? 0 : 1;
-
-	// for (int move = 0; move < 4; ++move) {
-	// 	for (int i = 0; i < n; ++i) {
-	// 		for (int j = 0; j < n; ++j) {
-	// 			std::cout << dp_seen[move][i][j] << " ";
-	// 		}
-	// 		std::cout << std::endl;
-	// 	}
-	// 	std::cout << "==" << std::endl;	
-	// }
-
-
-	// std::cout << "calculated" << std::endl;
-
-	return result;
+	return holmes_wins_cached(0, r - 1, b - 1) == true ? 0 : 1;
 }
 
 int main() {
