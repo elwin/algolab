@@ -1,75 +1,63 @@
 #include <iostream>
 #include <vector>
 #include <set>
+#include <limits>
 
-bool holmes_wins(int move, int r, int b);
+int shortest_path(int i, bool adversary, int move_nr);
 
 int n;
 std::vector<std::vector<int>> connections;
-std::vector<std::vector<std::vector<bool>>> dp;
-std::vector<std::vector<std::vector<bool>>> dp_seen;
+std::vector<std::vector<std::vector<int>>> dp;
 
-bool holmes_wins_cached(int move, int r, int b) {
-	move = move % 4;
-	if (!dp_seen[move][r][b]) {
-		dp[move][r][b] = holmes_wins(move, r, b);
-		dp_seen[move][r][b] = true;
+int shortest_path_cached(int i, bool adversary, int move_nr) {
+	if (dp[adversary][move_nr][i] == 0) {
+		dp[adversary][move_nr][i] = shortest_path(i, adversary, move_nr);
 	}
 
-	return dp[move][r][b];
+	return dp[adversary][move_nr][i];
 }
 
 // +---+----------+-------+
-// |   |  Player  | Color |
+// |   | Player   | Color |
 // +---+----------+-------+
 // | 0 | Holmes   | Red   |
 // | 1 | Moriarty | Black |
 // | 2 | Holmes   | Black |
 // | 3 | Moriarty | Red   |
 // +---+----------+-------+
-bool holmes_wins(int move, int r, int b) {
-	if (r == n - 1) { return true; }
-	if (b == n - 1) { return false; }
-
-	move = move % 4;
+//
+// +----------+-----------+
+// | Move Nr. | Color     |
+// +----------+-----------+
+// | 0, 1     | current   |
+// | 2, 3     | adversary |
+// +----------+-----------+
+int shortest_path(int i, bool adversary, int move_nr) {
 	
-	if (move == 0) {
-		for (int next: connections[r]) {
-			if (holmes_wins_cached(move + 1, next, b)) {
-				return true;
-			}
-		}
-		return false;
+	// Minimum length is 1 so we can distinguish in our dp table
+	if (i == n - 1) { return 1; }
+	
+	// Latter two moves are for the opposite color, so just add 1
+	if (move_nr > 1) {
+		return shortest_path_cached(i, !adversary, (move_nr + 1) % 4) + 1;
 	}
 
-	if (move == 1) {
-		for (int next: connections[b]) {
-			if (!holmes_wins_cached(move + 1, r, next)) {
-				return false;
-			}
+	int cur_path = adversary ? std::numeric_limits<int>::min() : std::numeric_limits<int>::max();
+	for (int next: connections[i]) {
+		int path_length = shortest_path_cached(next, !adversary, (move_nr + 1)) + 1;
+		if ((adversary && path_length > cur_path) || (!adversary && path_length < cur_path)) {
+			cur_path = path_length;
 		}
-		return true;
 	}
 
-	if (move == 2) {
-		for (int next: connections[b]) {
-			if (holmes_wins_cached(move + 1, r, next)) {
-				return true;
-			}
-		}
-		return false;
-	}
+	return cur_path;
+}
 
-	if (move == 3) {
-		for (int next: connections[r]) {
-			if (!holmes_wins_cached(move + 1, next, b)) {
-				return false;
-			}
-		}
-		return true;
-	}
+bool holmes_wins(int r, int b) {
+	int holmes_length = shortest_path_cached(r, false, 1);
+	int moriarty_length = shortest_path_cached(b, false, 0);
 
-	throw "unexpected case";
+	return holmes_length <= moriarty_length;
 }
 
 int testcase() {
@@ -82,18 +70,15 @@ int testcase() {
 		connections[u - 1].push_back(v - 1);
 	}
 
-	dp = std::vector<std::vector<std::vector<bool>>>(4);
-	dp_seen = std::vector<std::vector<std::vector<bool>>>(4);
-	for (int move = 0; move < 4; ++move) {
-		dp[move] = std::vector<std::vector<bool>>(n);
-		dp_seen[move] = std::vector<std::vector<bool>>(n);
-		for (int i = 0; i < n; ++i) {
-			dp[move][i] = std::vector<bool>(n);
-			dp_seen[move][i] = std::vector<bool>(n);
+	dp = std::vector<std::vector<std::vector<int>>>(2);
+	for (int i = 0; i < 2; ++i) {
+		dp[i] = std::vector<std::vector<int>>(4);
+		for (int j = 0; j < 4; ++j) {
+			dp[i][j] = std::vector<int>(n + 1);
 		}
 	}
 
-	return holmes_wins_cached(0, r - 1, b - 1) == true ? 0 : 1;
+	return holmes_wins(r - 1, b - 1) == true ? 0 : 1;
 }
 
 int main() {
