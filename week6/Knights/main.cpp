@@ -58,41 +58,44 @@ void testcase() {
 			// Add capacity for how many knights can pass through this intersection
 			adder.add_edge(intersections[i][j].in, intersections[i][j].out, c);
 
+			// Escape hallways row-wise
 			if (i == 0 || i == intersections.size() - 1) {
 				adder.add_edge(intersections[i][j].out, sink, 1);
 			}
 
+			// Escape hallways column-wise
 			if (j == 0 || j == intersections[i].size() - 1) {
 				adder.add_edge(intersections[i][j].out, sink, 1);	
 			}
 
-			// Connect to top
+			// Connect to top intersection
 			if (i > 0) {
 				adder.add_edge(intersections[i][j].out, intersections[i - 1][j].in, 1);
 			}
 
-			// Connect to bottom
+			// Connect to bottom intersection
 			if (i < intersections.size() - 1) {
 				adder.add_edge(intersections[i][j].out, intersections[i + 1][j].in, 1);
 			}
 
-			// Connect to left
+			// Connect to left intersection
 			if (j > 0) {
 				adder.add_edge(intersections[i][j].out, intersections[i][j - 1].in, 1);
 			}
 
-			// Connect to bottom
+			// Connect to bottom intersection
 			if (j < intersections[i].size() - 1) {
 				adder.add_edge(intersections[i][j].out, intersections[i][j + 1].in, 1);
 			}
 		}
 	}
 
-
 	// Add starting positions of knights
 	for (int i = 0; i < k; ++i) {
 		int x, y; std::cin >> x >> y;
-		adder.add_edge(source, intersections[y][x].in, 1); // TODO: correct?
+
+		// Probably mixed up column and rows somewhere, so let's go with [y][x]
+		adder.add_edge(source, intersections[y][x].in, 1);
 	}
 
 	long flow = boost::push_relabel_max_flow(G, source, sink);
