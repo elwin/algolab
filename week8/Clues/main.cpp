@@ -6,9 +6,6 @@
 #include <boost/graph/adjacency_list.hpp>
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
-typedef CGAL::Triangulation_vertex_base_with_info_2<int, K> Vb;
-typedef CGAL::Triangulation_face_base_2<K> Fb;
-typedef CGAL::Triangulation_data_structure_2<Vb,Fb> Tds;
 typedef CGAL::Delaunay_triangulation_2<K> Triangulation;
 typedef Triangulation::Finite_faces_iterator Face_iterator;
 typedef Triangulation::Edge_iterator  Edge_iterator;
@@ -37,6 +34,8 @@ void testcase() {
     	if (seg.squared_length() > r * r) {
     		continue;
     	}
+
+
 
     	std::cout << seg << std::endl;
 	}
