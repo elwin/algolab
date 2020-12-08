@@ -16,89 +16,109 @@ typedef Triangulation::Edge_iterator  Edge_iterator;
 
 typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> graph;
 typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, boost::no_property, boost::property<boost::edge_weight_t, int>> weighted_graph;
-
 typedef boost::graph_traits<graph>::vertex_iterator vertex_it;
 
 struct point {
-    int x, y;    
+	int x, y;    
 };
 
-int squared_distance(point a, b) {
-    return (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
+int squared_distance(point a, point b) {
+	return (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
 }
 
 void testcase(bool debug) {
-    int n, m, r; std::cin >> n >> m >> r;
-    if (debug) std::cout << n << " " << m << " " << r << std::endl;
+	int n, m, r; std::cin >> n >> m >> r;
+	if (debug) std::cout << n << " " << m << " " << r << std::endl;
 
-    typedef std::pair<K::Point_2, int> IPoint;
-    std::vector<IPoint> pts;
-    for (int i = 0; i < n; ++i) {
-        int x, y; std::cin >> x >> y;
-        if (debug) std::cout << x << " " << y << std::endl;
+	typedef std::pair<K::Point_2, int> IPoint;
+	std::vector<IPoint> stations;
+	for (int i = 0; i < n; ++i) {
+		int x, y; std::cin >> x >> y;
+		if (debug) std::cout << x << " " << y << std::endl;
 
-        pts.emplace_back(K::Point_2(x, y), i);
-    }
+		stations.emplace_back(K::Point_2(x, y), i);
+	}
 
-    Triangulation t;
-    t.insert(pts.begin(), pts.end());
+	std::vector<point> clues(m);
+	for (int i = 0; i < m; ++i) {
+		int x, y; std::cin >> x >> y;
+		clues[i] = point{x, y};
+	}
 
-    graph G(0);
+	Triangulation t;
+	t.insert(stations.begin(), stations.end());
 
-    std::vector<point> myVert;
+	for (int i = 0; i < m; ++i) {
+		point clue = clues[i];
+		auto handle = t.insert(K::Point_2(clue.x, clue.y));
 
-    for (Edge_iterator e = t.finite_edges_begin(); e != t.finite_edges_end(); ++e) {
-        auto seg = t.segment(e);
+		graph G(0);
 
-        // Skip lines that can't connect
-        if (seg.squared_length() > r * r) {
-            continue;
-        }
+		for (Edge_iterator e = t.finite_edges_begin(); e != t.finite_edges_end(); ++e) {
+			auto seg = t.segment(e);
 
-        int a = e->first->vertex((e->second + 1) % 3)->info();
-        int b = e->first->vertex((e->second + 2) % 3)->info();
+			// Skip lines that can't connect
+			if (seg.squared_length() > r * r) {
+				continue;
+			}
 
-        boost::add_edge(a, b, G);
-        myVert.push_back(point{a, b});
-    }
+			int a = e->first->vertex((e->second + 1) % 3)->info();
+			int b = e->first->vertex((e->second + 2) % 3)->info();
 
-    for (int i = 0; i < m; ++i) {
-        int ax, ay, bx, by;
-        std::cin >> ax >> ay >> bx >> by;
-        if (debug) std::cout << ax << " " << ay << " " << bx << " " << by << std::endl;
+			boost::add_edge(a, b, G);
+		}
 
-        point a = point{ax, ay};
-        point b = point{bx, by};
+		bool possible = true;
+		for (auto vd : boost::make_iterator_range(vertices(G))) {
+			if (degree(vd, G) > 2) {
+				possible = false;
+				break;
+			}
+		}
 
-        for (auto vd : boost::make_iterator_range(vertices(G))) {
-            point x = point{myVert[idx].x, myVert[idx].y};
-            int distance = squared_distance(x, a);
-            if (distance > r * r) continue;
-            
+		std::cout << (possible ? 'y' : 'n');
+
+		t.remove(handle);
+	}
 
 
-            std::cout << myVert[idx].x << std::endl;
-        }
+	// for (int i = 0; i < m; ++i) {
+	//     int ax, ay, bx, by;
+	//     std::cin >> ax >> ay >> bx >> by;
+	//     if (debug) std::cout << ax << " " << ay << " " << bx << " " << by << std::endl;
 
-        bool possible = true;
-        for (auto vd : boost::make_iterator_range(vertices(G))) {
-            if (degree(vd, G) > 2) {
-                possible = false;
-                break;
-            }
-        }
+	//     point a = point{ax, ay};
+	//     point b = point{bx, by};
 
-        std::cout << (possible ? 'y' : 'n');
-    }
+	//     for (auto vd : boost::make_iterator_range(vertices(G))) {
+	//         point x = point{myVert[idx].x, myVert[idx].y};
+	//         int distance = squared_distance(x, a);
+	//         if (distance > r * r) continue;
 
-    std::cout << std::endl;
+
+
+	//         std::cout << myVert[idx].x << std::endl;
+	//     }
+
+	//     bool possible = true;
+	//     for (auto vd : boost::make_iterator_range(vertices(G))) {
+	//         if (degree(vd, G) > 2) {
+	//             possible = false;
+	//             break;
+	//         }
+	//     }
+
+	//     std::cout << (possible ? 'y' : 'n');
+	// }
+
+	// std::cout << std::endl;
 }
 
 int main() {
-    int n; std::cin >> n;
-    for (int i = 0; i < n; ++i) {
-        testcase(false);
-    }
-    
-    return 0;
+	int n; std::cin >> n;
+	for (int i = 0; i < n; ++i) {
+		testcase(true);
+	}
+	
+	return 0;
 }
