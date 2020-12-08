@@ -6,18 +6,8 @@
 
 #include <boost/graph/adjacency_list.hpp>
 
-struct Point {
-	int x, y;    
-};
-
-struct Status {
-	bool visited;
-	bool first;
-	int component;
-};
-
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
-typedef CGAL::Triangulation_vertex_base_with_info_2<Status, K> Vb;
+typedef CGAL::Triangulation_vertex_base_with_info_2<int, K> Vb;
 typedef CGAL::Triangulation_face_base_2<K> Fb;
 typedef CGAL::Triangulation_data_structure_2<Vb,Fb> Tds;
 typedef CGAL::Delaunay_triangulation_2<K, Tds> Triangulation;
@@ -28,6 +18,10 @@ typedef Triangulation::Edge_iterator Edge_iterator;
 typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> graph;
 typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, boost::no_property, boost::property<boost::edge_weight_t, int>> weighted_graph;
 typedef boost::graph_traits<graph>::vertex_iterator vertex_it;
+
+struct Point {
+	int x, y;    
+};
 
 int squared_distance(Point a, Point b) {
 	return (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
@@ -57,7 +51,7 @@ void testcase(bool debug) {
 	Triangulation t, t0, t1;
 	t.insert(stations.begin(), stations.end());
 	for (Vertex_iterator v = t.finite_vertices_begin(); v != t.finite_vertices_end(); v++) {
-		v->info() = Status{false, false, -1};
+		v->info() = -1;
 	}
 
 	bool possible = true;
