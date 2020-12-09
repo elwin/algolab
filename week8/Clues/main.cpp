@@ -6,22 +6,26 @@
 
 #include <boost/graph/adjacency_list.hpp>
 
+struct Point {
+	int x, y;    
+};
+
+struct Status {
+	bool visited;
+	bool first;
+	bool visited_component;
+	int component;
+};
+
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
-typedef CGAL::Triangulation_vertex_base_with_info_2<int, K> Vb;
+typedef CGAL::Triangulation_vertex_base_with_info_2<Status, K> Vb;
 typedef CGAL::Triangulation_face_base_2<K> Fb;
 typedef CGAL::Triangulation_data_structure_2<Vb,Fb> Tds;
 typedef CGAL::Delaunay_triangulation_2<K, Tds> Triangulation;
 typedef Triangulation::Finite_faces_iterator Face_iterator;
 typedef Triangulation::Vertex_iterator Vertex_iterator;
 typedef Triangulation::Edge_iterator Edge_iterator;
-
-typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> graph;
-typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, boost::no_property, boost::property<boost::edge_weight_t, int>> weighted_graph;
-typedef boost::graph_traits<graph>::vertex_iterator vertex_it;
-
-struct Point {
-	int x, y;    
-};
+typedef Triangulation::Vertex_handle Vertex_handle;
 
 int squared_distance(Point a, Point b) {
 	return (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
@@ -51,7 +55,7 @@ void testcase(bool debug) {
 	Triangulation t, t0, t1;
 	t.insert(stations.begin(), stations.end());
 	for (Vertex_iterator v = t.finite_vertices_begin(); v != t.finite_vertices_end(); v++) {
-		v->info() = -1;
+		v->info() = Status{false, false, false, -1};
 	}
 
 	bool possible = true;
@@ -59,10 +63,10 @@ void testcase(bool debug) {
 		auto a = e->first->vertex((e->second + 1) % 3);
 		auto b = e->first->vertex((e->second + 2) % 3);
 
-		if (a->info() == -1 && b->info() == -1) {
-			a->info() = 0;
-			b->info() = 1;
-		} else if (a->info() == b->info()) {
+		if (!a->info().visited && b->info().visited) {
+			a->info().visited = true; a->info().first = true;
+			b->info().visited = true; b->info().first = false;
+		} else if (a->info().first == b->info().first) {
 			if (t.segment(e).squared_length() > r * r) {
 				continue;
 			}
@@ -70,19 +74,20 @@ void testcase(bool debug) {
 			possible = false;
 			break;
 		} else {
-			if (a->info() == -1) {
+			if (!a->info().visited) {
 				auto temp = a;
 				a = b;
 				b = temp;
 			}
 
-			b->info() = a->info() == 0 ? 1 : 0;
+			b->info().first = !a->info().first;
+			b->info().visited = true;
 		}
 	}
 
 	if (!possible) {
 		for (int i = 0; i < m; ++i) {
-			std::cout << 'n';
+			std::cout << 'x';
 		}
 		std::cout << std::endl;
 
@@ -90,13 +95,11 @@ void testcase(bool debug) {
 	}
 
 	for (Vertex_iterator v = t.finite_vertices_begin(); v != t.finite_vertices_end(); v++) {
-		std::cout << v->info() << std::endl;
-
-		if (v->info() == -1) {
+		if (!v->info().visited) {
 			throw "unmarked vertex!";
 		}
 
-		if (v->info() == 0) {
+		if (v->info().first) {
 			t0.insert(v->point());
 		} else {
 			t1.insert(v->point());
@@ -127,90 +130,42 @@ void testcase(bool debug) {
 		return;
 	}
 
-	for (int i = 0; i < m; ++i) {
-		Point a = clues_a[i];
-		Point b = clues_b[i];
+	// Figure out components
+	for (Vertex_iterator v = t.finite_vertices_begin(); v != t.finite_vertices_end(); v++) {
+		std::stack<Vertex_handle> stack;
+		stack.push(v);
+
+		int current_component = 0;
+		while (!stack.empty()) {
+			Vertex_handle next = stack.top(); stack.pop();
+			if (next->info().visited_component) {
+				continue;
+			}
+
+			next->info().component = current_component;
+			next->info().visited_component = true;
+		}
+
+		current_component++;
 	}
 
 
+	for (int i = 0; i < m; ++i) {
+		Point a = clues_a[i];
+		Point b = clues_b[i];
 
+		Vertex_handle a_handle = t.nearest_vertex(K::Point_2(a.x, a.y));
+		Vertex_handle b_handle = t.nearest_vertex(K::Point_2(b.x, b.y));
 
+		if (a_handle->info().component == b_handle->info().component) {
+			std::cout << 'y';
+		} else {
+			std::cout << 'n';
+		}
+	}
 
+	std::cout << std::endl;
 
-
-	// for (int i = 0; i < m; ++i) {
-	// 	CluePair pair = clues[i];
-	// 	Point first = pair.first;
-	// 	Point second = pair.second;
-
-	// 	// auto next = IPoint(K::Point_2(first.x, first.y), n+i);
-	// 	auto handleA = t.insert(K::Point_2(first.x, first.y));
-	// 	handleA->info() = n + 1;
-
-	// 	auto handleB = t.insert(K::Point_2(second.x, second.y));
-	// 	handleB->info() = n + 2;
-
-	// 	graph G(0);
-
-	// 	for (Edge_iterator e = t.finite_edges_begin(); e != t.finite_edges_end(); ++e) {
-	// 		auto seg = t.segment(e);
-
-	// 		// Skip lines that can't connect
-	// 		if (seg.squared_length() > r * r) {
-	// 			continue;
-	// 		}
-
-	// 		int a = e->first->vertex((e->second + 1) % 3)->info();
-	// 		int b = e->first->vertex((e->second + 2) % 3)->info();
-
-	// 		boost::add_edge(a, b, G);
-	// 	}
-
-	// 	bool possible = true;
-	// 	for (auto vd : boost::make_iterator_range(vertices(G))) {
-	// 		if (degree(vd, G) > 2) {
-	// 			possible = false;
-	// 			break;
-	// 		}
-	// 	}
-
-	// 	std::cout << (possible ? 'y' : 'n');
-
-	// 	t.remove(handleA);
-	// 	t.remove(handleB);
-	// }
-
-
-	// for (int i = 0; i < m; ++i) {
-	//     int ax, ay, bx, by;
-	//     std::cin >> ax >> ay >> bx >> by;
-	//     if (debug) std::cout << ax << " " << ay << " " << bx << " " << by << std::endl;
-
-	//     Point a = Point{ax, ay};
-	//     Point b = Point{bx, by};
-
-	//     for (auto vd : boost::make_iterator_range(vertices(G))) {
-	//         Point x = Point{myVert[idx].x, myVert[idx].y};
-	//         int distance = squared_distance(x, a);
-	//         if (distance > r * r) continue;
-
-
-
-	//         std::cout << myVert[idx].x << std::endl;
-	//     }
-
-	//     bool possible = true;
-	//     for (auto vd : boost::make_iterator_range(vertices(G))) {
-	//         if (degree(vd, G) > 2) {
-	//             possible = false;
-	//             break;
-	//         }
-	//     }
-
-	//     std::cout << (possible ? 'y' : 'n');
-	// }
-
-	// std::cout << std::endl;
 }
 
 int main() {
