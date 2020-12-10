@@ -11,10 +11,6 @@ void ass(bool assertion, std::string reason) {
 	}
 }
 
-struct Point {
-	int x, y;    
-};
-
 struct Status {
 	bool visited;
 	bool first;
@@ -34,10 +30,6 @@ typedef Triangulation::Vertex_handle Vertex_handle;
 typedef Triangulation::Edge_circulator Edge_circulator;
 typedef Triangulation::Vertex_circulator Vertex_circulator;
 
-int squared_distance(Point a, Point b) {
-	return (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
-}
-
 void testcase(bool debug) {
 	int n, m, r; std::cin >> n >> m >> r;
 	if (debug) std::cout << n << " " << m << " " << r << std::endl;
@@ -50,13 +42,13 @@ void testcase(bool debug) {
 		stations[i] = K::Point_2(x, y);
 	}
 
-	std::vector<Point> clues_a(m);
-	std::vector<Point> clues_b(m);
+	std::vector<K::Point_2> clues_a(m);
+	std::vector<K::Point_2> clues_b(m);
 	for (int i = 0; i < m; ++i) {
 		int ax, ay; std::cin >> ax >> ay;
 		int bx, by; std::cin >> bx >> by;
-		clues_a[i] = Point{ax, ay};
-		clues_b[i] = Point{bx, by};
+		clues_a[i] = K::Point_2(ax, ay);
+		clues_b[i] = K::Point_2(bx, by);
 	}
 
 	Triangulation t, t0, t1;
@@ -105,7 +97,7 @@ void testcase(bool debug) {
 					if (next->info().first != true)
 						possible = false;
 
-					continue;
+					break;
 				}
 
 				next->info().visited = true;
@@ -124,7 +116,7 @@ void testcase(bool debug) {
 					if (next->info().first != false)
 						possible = false;
 
-					continue;
+					break;
 				}
 				next->info().visited = true;
 				next->info().first = false;
@@ -183,6 +175,8 @@ void testcase(bool debug) {
 
 
 	if (!possible) {
+		if (debug) std::cout << "network has interference" << std::endl;
+
 		for (int i = 0; i < m; ++i) {
 			std::cout << 'n';
 		}
@@ -192,16 +186,16 @@ void testcase(bool debug) {
 	}
 
 	for (int i = 0; i < m; ++i) {
-		Point a = clues_a[i];
-		Point b = clues_b[i];
+		K::Point_2 a = clues_a[i];
+		K::Point_2 b = clues_b[i];
 
-		Vertex_handle a_handle = t.nearest_vertex(K::Point_2(a.x, a.y));
-		Vertex_handle b_handle = t.nearest_vertex(K::Point_2(b.x, b.y));
+		Vertex_handle a_nearest = t.nearest_vertex(a);
+		Vertex_handle b_nearest = t.nearest_vertex(b);
 
-		if (CGAL::squared_distance(K::Point_2(a.x, a.y), K::Point_2(b.x, b.y)) <= r * r || (
-			CGAL::squared_distance(a_handle->point(), K::Point_2(a.x, a.y)) <= r * r &&
-			CGAL::squared_distance(b_handle->point(), K::Point_2(b.x, b.y)) <= r * r &&
-			a_handle->info().component == b_handle->info().component)) {
+		if (CGAL::squared_distance(a, b) <= r * r || (
+			CGAL::squared_distance(a_nearest->point(), a) <= r * r &&
+			CGAL::squared_distance(b_nearest->point(), b) <= r * r &&
+			a_nearest->info().component == b_nearest->info().component)) {
 			std::cout << 'y';
 		} else {
 			std::cout << 'n';
@@ -213,6 +207,7 @@ void testcase(bool debug) {
 }
 
 int main() {
+	std::ios_base::sync_with_stdio(false);
 	int n; std::cin >> n;
 	for (int i = 0; i < n; ++i) {
 		testcase(false);
