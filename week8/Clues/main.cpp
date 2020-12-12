@@ -29,7 +29,7 @@ typedef Triangulation::Vertex_handle Vertex_handle;
 typedef Triangulation::Edge_circulator Edge_circulator;
 typedef Triangulation::Vertex_circulator Vertex_circulator;
 
-bool color_vertices(Triangulation &t, Vertex_handle v, int rr, bool expected, int component) {
+bool color_vertices(Triangulation &t, Vertex_handle v, size_t rr, bool expected, int component) {
 	if (v->info().visited) {
 		return v->info().color == expected;
 	}
@@ -53,18 +53,18 @@ bool color_vertices(Triangulation &t, Vertex_handle v, int rr, bool expected, in
 
 
 void testcase() {
-	int n, m, r; std::cin >> n >> m >> r;
-	int rr = r * r;
+	size_t n, m, r; std::cin >> n >> m >> r;
+	size_t rr = r * r;
 
 	std::vector<K::Point_2> stations(n);
-	for (int i = 0; i < n; ++i) {
+	for (size_t i = 0; i < n; ++i) {
 		int x, y; std::cin >> x >> y;
 		stations[i] = K::Point_2(x, y);
 	}
 
 	std::vector<K::Point_2> a_clue(m);
 	std::vector<K::Point_2> b_clue(m);
-	for (int i = 0; i < m; ++i) {
+	for (size_t i = 0; i < m; ++i) {
 		int ax, ay, bx, by;
 		std::cin >> ax >> ay >> bx >> by;
 		a_clue[i] = K::Point_2(ax, ay);
@@ -74,15 +74,16 @@ void testcase() {
 	Triangulation t, t0, t1;
 	t.insert(stations.begin(), stations.end());
 
-	for (Vertex_iterator v = t.finite_vertices_begin(); v != t.finite_vertices_end(); ++v) {
+	for (Vertex_iterator v = t.finite_vertices_begin(); v != t.finite_vertices_end(); v++) {
 		v->info() = {false, false, -1};
 	}
 
 
 	bool possible = true;
 	int component = 1;
-	for (Vertex_iterator v = t.finite_vertices_begin(); v != t.finite_vertices_end(); ++v) {
-		if (!v->info().visited && !color_vertices(t, v, rr, false, component++)) {
+	for (Vertex_iterator v = t.finite_vertices_begin(); v != t.finite_vertices_end(); v++) {
+		if (v->info().visited) continue;
+		if (!color_vertices(t, v, rr, false, component++)) {
 			possible = false;
 		}
 	}
@@ -93,7 +94,7 @@ void testcase() {
 	}
 
 	if (possible) {
-		for (Vertex_iterator v = t.finite_vertices_begin(); v != t.finite_vertices_end(); ++v) {
+		for (Vertex_iterator v = t.finite_vertices_begin(); v != t.finite_vertices_end(); v++) {
 			if (v->info().color) {
 				t0.insert(v->point());
 			} else {
@@ -117,7 +118,7 @@ void testcase() {
 	}
 
 	if (!possible) {
-		for (int i = 0; i < m; ++i) {
+		for (size_t i = 0; i < m; ++i) {
 			std::cout << 'n';
 		}
 		std::cout << std::endl;
@@ -125,7 +126,7 @@ void testcase() {
 		return;
 	}
 
-	for (int i = 0; i < m; ++i) {
+	for (size_t i = 0; i < m; ++i) {
 		K::Point_2 a = a_clue[i];
 		K::Point_2 b = b_clue[i];
 		Vertex_handle a_nearest = t.nearest_vertex(a);
@@ -144,8 +145,8 @@ void testcase() {
 
 int main() {
 	std::ios_base::sync_with_stdio(false);
-	int t; std::cin >> t;
-	for (int i = 0; i < t; ++i) {
+	size_t t; std::cin >> t;
+	for (size_t i = 0; i < t; ++i) {
 		testcase();
 	}
 }
