@@ -13,8 +13,7 @@ void ass(bool assertion, std::string reason) {
 
 struct Status {
 	bool visited;
-	bool first;
-	bool visited_component;
+	bool color;
 	int component;
 };
 
@@ -30,153 +29,94 @@ typedef Triangulation::Vertex_handle Vertex_handle;
 typedef Triangulation::Edge_circulator Edge_circulator;
 typedef Triangulation::Vertex_circulator Vertex_circulator;
 
-void testcase(bool debug) {
+bool color_vertices(Triangulation &t, Vertex_handle v, int rr, bool expected, int component) {
+	if (v->info().visited) {
+		return v->info().color == expected;
+	}
+
+	v->info().visited = true;
+	v->info().color = expected;
+	v->info().component = component;
+
+	Vertex_circulator c = t.incident_vertices(v);
+	do {
+		if (t.is_infinite(c) || CGAL::squared_distance(v->point(), c->point()) > rr) continue;
+
+		if (!color_vertices(t, c, rr, !expected, component)) {
+			return false;
+		}
+
+	} while (++c != t.incident_vertices(v));
+
+	return true;
+}
+
+
+void testcase() {
 	int n, m, r; std::cin >> n >> m >> r;
-	if (debug) std::cout << n << " " << m << " " << r << std::endl;
+	int rr = r * r;
 
 	std::vector<K::Point_2> stations(n);
 	for (int i = 0; i < n; ++i) {
 		int x, y; std::cin >> x >> y;
-		if (debug) std::cout << x << " " << y << std::endl;
-
 		stations[i] = K::Point_2(x, y);
 	}
 
-	std::vector<K::Point_2> clues_a(m);
-	std::vector<K::Point_2> clues_b(m);
+	std::vector<K::Point_2> a_clue(m);
+	std::vector<K::Point_2> b_clue(m);
 	for (int i = 0; i < m; ++i) {
-		int ax, ay; std::cin >> ax >> ay;
-		int bx, by; std::cin >> bx >> by;
-		clues_a[i] = K::Point_2(ax, ay);
-		clues_b[i] = K::Point_2(bx, by);
+		int ax, ay, bx, by;
+		std::cin >> ax >> ay >> bx >> by;
+		a_clue[i] = K::Point_2(ax, ay);
+		b_clue[i] = K::Point_2(bx, by);
 	}
 
 	Triangulation t, t0, t1;
 	t.insert(stations.begin(), stations.end());
-	for (Vertex_iterator v = t.finite_vertices_begin(); v != t.finite_vertices_end(); v++) {
-		v->info() = Status{false, false, false, 0};
+
+	for (Vertex_iterator v = t.finite_vertices_begin(); v != t.finite_vertices_end(); ++v) {
+		v->info() = {false, false, -1};
 	}
 
-	// Figure out components
-	int current_component = 1;
-	for (Vertex_iterator v = t.finite_vertices_begin(); v != t.finite_vertices_end(); v++) {
-		if (v->info().visited_component) continue;
-
-		std::stack<Vertex_handle> stack;
-		stack.push(v);
-
-		while (!stack.empty()) {
-			Vertex_handle next = stack.top(); stack.pop();
-			if (next->info().visited_component) continue;
-
-			next->info().component = current_component;
-			next->info().visited_component = true;
-
-			Vertex_circulator c = t.incident_vertices(next);
-			do {
-				if (t.is_infinite(c) || CGAL::squared_distance(c->point(), next->point()) > r * r) { continue; }
-				stack.push(c);
-			} while (++c != t.incident_vertices(next));
-		}
-
-		current_component++;
-	}
 
 	bool possible = true;
-	for (Vertex_iterator v = t.finite_vertices_begin(); v != t.finite_vertices_end(); v++) {
-		std::stack<Vertex_handle> stack1;
-		std::stack<Vertex_handle> stack2;
-
-		if (v->info().visited) continue;
-		stack1.push(v);
-
-		while (!stack1.empty() || !stack2.empty()) {
-			while (!stack1.empty()) {
-				Vertex_handle next = stack1.top(); stack1.pop();
-				if (next->info().visited) {
-					if (next->info().first != true)
-						possible = false;
-
-					break;
-				}
-
-				next->info().visited = true;
-				next->info().first = true;
-
-				Vertex_circulator c = t.incident_vertices(next);
-				do {
-					if (t.is_infinite(c) || CGAL::squared_distance(c->point(), next->point()) > r * r) { continue; }
-					stack2.push(c);
-				} while (++c != t.incident_vertices(next));
-			}
-
-			while (!stack2.empty()) {
-				Vertex_handle next = stack2.top(); stack2.pop();
-				if (next->info().visited) {
-					if (next->info().first != false)
-						possible = false;
-
-					break;
-				}
-				next->info().visited = true;
-				next->info().first = false;
-
-				Vertex_circulator c = t.incident_vertices(next);
-				do {
-					if (t.is_infinite(c) || CGAL::squared_distance(c->point(), next->point()) > r * r) { continue; }
-					stack1.push(c);
-				} while (++c != t.incident_vertices(next));
-			}
+	int component = 1;
+	for (Vertex_iterator v = t.finite_vertices_begin(); v != t.finite_vertices_end(); ++v) {
+		if (!v->info().visited && !color_vertices(t, v, rr, false, component++)) {
+			possible = false;
 		}
 	}
 
 	for (Vertex_iterator v = t.finite_vertices_begin(); v != t.finite_vertices_end(); v++) {
 		ass(v->info().visited == true, "not all vertices visited");
-		ass(v->info().visited_component == true, "not all vertices visited");
 		ass(v->info().component > 0, "not all components larger than 0");
 	}
 
-	for (Vertex_iterator v = t.finite_vertices_begin(); v != t.finite_vertices_end(); v++) {
-		if (!v->info().visited) {
-			throw "unmarked vertex!";
+	if (possible) {
+		for (Vertex_iterator v = t.finite_vertices_begin(); v != t.finite_vertices_end(); ++v) {
+			if (v->info().color) {
+				t0.insert(v->point());
+			} else {
+				t1.insert(v->point());
+			}
 		}
 
-		if (v->info().first) {
-			t0.insert(v->point());
-		} else {
-			t1.insert(v->point());
-		}
-	}
-
-	if (debug) {
-		int count1 = 0; int count2 = 0;
 		for (Edge_iterator e = t0.finite_edges_begin(); e != t0.finite_edges_end(); e++) {
-			count1++;
+			if (t1.segment(e).squared_length() <= rr) {
+				possible = false;
+				break;
+			}
 		}
+
 		for (Edge_iterator e = t1.finite_edges_begin(); e != t1.finite_edges_end(); e++) {
-			count2++;
-		}
-		std::cout << "assignment count: " << count1 << " / " << count2 << std::endl;
-	}
-
-	for (Edge_iterator e = t0.finite_edges_begin(); e != t0.finite_edges_end(); e++) {
-		if (t0.segment(e).squared_length() <= r * r) {
-			possible = false;
-			break;
+			if (t1.segment(e).squared_length() <= rr) {
+				possible = false;
+				break;
+			}
 		}
 	}
-
-	for (Edge_iterator e = t1.finite_edges_begin(); e != t1.finite_edges_end(); e++) {
-		if (t1.segment(e).squared_length() <= r * r) {
-			possible = false;
-			break;
-		}
-	}
-
 
 	if (!possible) {
-		if (debug) std::cout << "network has interference" << std::endl;
-
 		for (int i = 0; i < m; ++i) {
 			std::cout << 'n';
 		}
@@ -186,32 +126,26 @@ void testcase(bool debug) {
 	}
 
 	for (int i = 0; i < m; ++i) {
-		K::Point_2 a = clues_a[i];
-		K::Point_2 b = clues_b[i];
-
+		K::Point_2 a = a_clue[i];
+		K::Point_2 b = b_clue[i];
 		Vertex_handle a_nearest = t.nearest_vertex(a);
 		Vertex_handle b_nearest = t.nearest_vertex(b);
 
-		if (CGAL::squared_distance(a, b) <= r * r || (
-			CGAL::squared_distance(a_nearest->point(), a) <= r * r &&
-			CGAL::squared_distance(b_nearest->point(), b) <= r * r &&
-			a_nearest->info().component == b_nearest->info().component)) {
-			std::cout << 'y';
-		} else {
-			std::cout << 'n';
-		}
-	}
+		bool condition = CGAL::squared_distance(a, b) <= rr;
+		condition = condition || (a_nearest->info().component == b_nearest->info().component && 
+			CGAL::squared_distance(a_nearest->point(), a) <= rr &&
+			CGAL::squared_distance(b_nearest->point(), b) <= rr);
 
+		std::cout << (condition ? 'y' : 'n');
+	}
 	std::cout << std::endl;
 
 }
 
 int main() {
 	std::ios_base::sync_with_stdio(false);
-	int n; std::cin >> n;
-	for (int i = 0; i < n; ++i) {
-		testcase(false);
+	int t; std::cin >> t;
+	for (int i = 0; i < t; ++i) {
+		testcase();
 	}
-	
-	return 0;
 }
