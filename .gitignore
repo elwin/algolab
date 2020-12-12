@@ -1,6 +1,7 @@
 prog
 main
 **/prog.dSYM
+**/.cx_metadata.json
 
 # CMake stuff
 **/CMakeFiles
