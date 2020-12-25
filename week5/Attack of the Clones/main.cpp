@@ -7,6 +7,8 @@ struct segment {
 };
 
 bool compare(segment x, segment y) {
+	// if (x.b == y.b) return x.a < y.a;
+
 	return x.b < y.b;
 }
 
@@ -14,6 +16,12 @@ size_t length(segment x, size_t m) {
 	if (x.a < x.b) return x.b - x.a;
 
 	return m - x.a + x.b;
+}
+
+bool overlap(segment x, size_t p) {
+	if (x.a < x.b) return x.a <= p && x.b >= p;
+
+	return x.a <= p && x.a >= p;
 }
 
 bool overlap(segment x, segment y) {
@@ -66,6 +74,8 @@ size_t testcase() {
 
 	std::sort(segments.begin(), segments.end(), compare);
 
+	// instead of finding the jedi with the least segments,
+	// perhaps search for the segment covered by the least jedis?
 	size_t j = 0;
 	for (size_t i = 1; i < n; ++i) {
 		if (length(segments[i], m) < length(segments[j], m)) {

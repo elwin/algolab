@@ -2,6 +2,7 @@ prog
 main
 **/prog.dSYM
 **/.cx_metadata.json
+**/.gdb_history
 
 # CMake stuff
 **/CMakeFiles
