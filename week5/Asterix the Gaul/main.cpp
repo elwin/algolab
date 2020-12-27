@@ -9,6 +9,31 @@ struct movement {
 	Num d, t; 
 };
 
+bool compare(movement a, movement b) {
+	return a.d > b.d;
+}
+
+Num search_max_distance(std::vector<movement> &l, Num t) {
+	for (size_t i = 0; i < l.size(); ++i) {
+		if (l[i].t < t) return l[i].d;
+	}
+
+	return 0;
+}
+
+Num max_distance_2(std::vector<movement> &movements, std::vector<movement> &l, int i, Num remainingTime, Num sip) {
+	if (i == -1) {
+		return search_max_distance(l, remainingTime);
+	}
+
+	Num max = max_distance_2(movements, l, i - 1, remainingTime, sip);
+	if (movements[i].t < remainingTime) {
+		max = std::max(max, max_distance_2(movements, l, i - 1, remainingTime - movements[i].t, sip) + movements[i].d + sip);
+	}
+
+	return max;
+}
+
 Num max_distance(std::vector<movement> &movements, int i, Num remainingTime, Num sip) {
 	if (i == -1) return 0;
 
@@ -18,6 +43,35 @@ Num max_distance(std::vector<movement> &movements, int i, Num remainingTime, Num
 	}
 
 	return max;
+}
+
+// TODO: find a better way to return vector
+std::vector<movement> list(std::vector<movement> &movements, int i, Num sip) {
+	if (i == -1) return {{0, 0}};
+
+	std::vector<movement> take = list(movements, i - 1, sip);
+	size_t n = take.size();
+	for (size_t i = 0; i < n; ++i) {
+		take.push_back({take[i].d + movements[i].d, take[i].t + movements[i].t});
+	}
+
+	return take;
+}
+
+Num max_distance_optimized(std::vector<movement> &movements, Num sip, Num T) {
+	int middle = movements.size() / 2;
+	std::vector<movement> a(movements.begin(), movements.begin() + middle);
+	std::vector<movement> b(movements.begin() + middle, movements.end());
+	if (a.size() + b.size() != movements.size()) {
+		std::cout << "ahh sizes do not add up" << std::endl;
+	}
+
+	std::vector<movement> l = list(a, a.size() - 1, sip);
+	std::sort(l.begin(), l.end(), compare);
+
+	max_distance_2(b, l, b.size() - 1, T, sip);
+
+	return 0;
 }
 
 int search(std::vector<movement> &movements, std::vector<Num> &sips, Num D, Num T, size_t l, size_t u) {
@@ -49,24 +103,13 @@ int testcase() {
 		std::cin >> movements[i].d >> movements[i].t;
 	}
 
-	std::vector<Num> sips(m);
+	std::vector<Num> sips(m + 1);
+	sips[0] = 0;
 	for (size_t i = 0; i < m; ++i) {
-		std::cin >> sips[i];
+		std::cin >> sips[i + 1];
 	}
 
-	if (max_distance(movements, movements.size() - 1, T, 0) >= D) {
-		return 0;
-	}
-
-	// for (size_t i = 0; i < m; ++i) {
-	// 	if (max_distance(movements, movements.size() - 1, T, sips[i]) >= D) {
-	// 		return i + 1;
-	// 	}
-	// }
-
-	int i = search(movements, sips, D, T, 0, sips.size());
-
-	return i > -1 ? i + 1 : -1;
+	return search(movements, sips, D, T, 0, sips.size());
 }
 
 
