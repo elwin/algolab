@@ -74,12 +74,34 @@ Num max_distance(Moves &m, Num sip, Num remainingTime) {
 	return max_distance_rec(b, lm, sip, remainingTime, b.size() - 1);
 }
 
-Num search(Moves &m, std::vector<Num> &sips, Num D, Num T) {
-	for (size_t i = 0; i < sips.size(); ++i) {
-		if (max_distance(m, sips[i], T) >= D) return i;
+int search_rec(Moves &m, std::vector<Num> &sips, Num D, Num T, size_t l, size_t u) {
+	if (sips.size() == 0) return -1;
+	if (u == l) return max_distance(m, sips[l], T) >= D ? l : -1;
+
+	if (u - 1 == l) {
+		if (search_rec(m, sips, D, T, l, l) != -1) return l;
+		if (u < sips.size() && search_rec(m, sips, D, T, u, u) != -1) return u;
+		return -1;
 	}
 
-	return -1;
+	size_t middle = (l + u - 1) / 2;
+	Num cur = max_distance(m, sips[middle], T);
+
+	if (cur < D) {
+		return search_rec(m, sips, D, T, middle + 1, u);
+	}
+
+	return search_rec(m, sips, D, T, l, middle + 1);
+}
+
+int search(Moves &m, std::vector<Num> &sips, Num D, Num T) {
+	// for (size_t i = 0; i < sips.size(); ++i) {
+	// 	if (max_distance(m, sips[i], T) >= D) return i;
+	// }
+
+	// return -1;
+
+	return search_rec(m, sips, D, T, 0, sips.size());
 }
 
 
