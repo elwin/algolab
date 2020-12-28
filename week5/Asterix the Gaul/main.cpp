@@ -77,7 +77,7 @@ Num max_distance(Moves &m, Num sip, Num remainingTime) {
 	return max_distance_rec(b, lm, sip, remainingTime, b.size() - 1);
 }
 
-Num search(Moves &m, std::vector<Num> sips, Num D, Num T) {
+Num search(Moves &m, std::vector<Num> &sips, Num D, Num T) {
 	for (size_t i = 0; i < sips.size(); ++i) {
 		if (max_distance(m, sips[i], T) >= D) return i;
 	}
