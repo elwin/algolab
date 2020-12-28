@@ -33,14 +33,36 @@ Moves max_distance_list(Moves &m, Num sip) {
 	std::sort(lm.begin(), lm.end(), compare);
 	std::reverse(lm.begin(), lm.end());
 
+	Moves lm2(0);
+	lm2.push_back(lm[0]);
 	for (size_t i = 1; i < lm.size(); ++i) {
-		if (lm[i - 1].t <= lm[i].t) {
-			lm.erase(lm.begin() + i);
-			i--;
+		if (lm2[lm2.size() - 1].t > lm[i].t) {
+			lm2.push_back(lm[i]);
 		}
 	}
 
-	return lm;
+	// for (size_t i = 1; i < lm.size(); ++i) {
+	// 	if (lm[i - 1].t <= lm[i].t) {
+	// 		lm.erase(lm.begin() + i);
+	// 		i--;
+	// 	}
+	// }
+
+	return lm2;
+}
+
+Num find_max_rec(Moves &lm, Num remainingTime, size_t l, size_t u) {
+	if (lm.size() == 0) return 0;
+	if (u == l) return lm[u].d;
+
+	size_t middle = (l + u - 1) / 2;
+	Num cur = lm[middle].d;
+
+	if (cur < remainingTime) {
+		return find_max_rec(lm, remainingTime, middle + 1, u);
+	}
+
+	return find_max_rec(lm, remainingTime, l, middle + 1);
 }
 
 Num find_max(Moves &lm, Num remainingTime) {
@@ -63,7 +85,7 @@ Num max_distance_rec(Moves &m, Moves &lm, Num sip, Num remainingTime, int i) {
 }
 
 Num max_distance(Moves &m, Num sip, Num remainingTime) {
-	// std::random_shuffle(m.begin(), m.end());
+	std::random_shuffle(m.begin(), m.end());
 
 	size_t middle = m.size() / 2;
 	Moves a(m.begin(), m.begin() + middle);
@@ -95,11 +117,7 @@ int search_rec(Moves &m, std::vector<Num> &sips, Num D, Num T, size_t l, size_t 
 }
 
 int search(Moves &m, std::vector<Num> &sips, Num D, Num T) {
-	// for (size_t i = 0; i < sips.size(); ++i) {
-	// 	if (max_distance(m, sips[i], T) >= D) return i;
-	// }
-
-	// return -1;
+	// if (max_distance(m, sips[0], T) >= D) return 0;
 
 	return search_rec(m, sips, D, T, 0, sips.size());
 }
@@ -124,6 +142,7 @@ int testcase() {
 
 
 int main() {
+	std::ios_base::sync_with_stdio(false);
 	size_t t; std::cin >> t;
 	while (t--) {
 		int out = testcase();
