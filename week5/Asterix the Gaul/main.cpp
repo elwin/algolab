@@ -70,9 +70,6 @@ Num max_distance(Moves &m, Num sip, Num remainingTime) {
 	Moves b(m.begin() + middle, m.end());
 
 	Moves lm = max_distance_list(a, sip);
-	// for (size_t i = 0; i < lm.size(); ++i) {
-	// 	std::cout << lm[i].d << " " << lm[i].t << std::endl;
-	// }
 
 	return max_distance_rec(b, lm, sip, remainingTime, b.size() - 1);
 }
