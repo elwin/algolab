@@ -2,6 +2,8 @@
 #include <vector>
 #include <algorithm>
 #include <limits>
+#include <chrono>
+
 
 typedef long long Num;
 
@@ -16,37 +18,31 @@ bool compare(movement a, movement b) {
 	return a.d < b.d;
 }
 
-Moves list(Moves &m, Num sip, int i) {
+Moves list(Moves &m, Num remainingTime, Num sip, int i) {
 	if (i == -1) return {{0, 0}};
 
-	Moves prev = list(m, sip, i - 1);
-	size_t n = prev.size();
-	for (size_t j = 0; j < n; ++j) {
-		prev.push_back({prev[j].d + m[i].d + sip, prev[j].t + m[i].t});
+	Moves prev = list(m, remainingTime, sip, i - 1);;
+	for (size_t j = 0, n = prev.size(); j < n; ++j) {
+		if (prev[j].t + m[i].t < remainingTime) {
+			prev.push_back({prev[j].d + m[i].d + sip, prev[j].t + m[i].t});
+		}
 	}
 
 	return prev;
 }
 
-Moves max_distance_list(Moves &m, Num sip) {
-	Moves lm = list(m, sip, m.size() - 1);
+Moves max_distance_list(Moves &m, Num remainingTime, Num sip) {
+	Moves lm = list(m, remainingTime, sip, m.size() - 1);
 	std::sort(lm.begin(), lm.end(), compare);
 	std::reverse(lm.begin(), lm.end());
 
-	Moves lm2(0);
-	lm2.push_back(lm[0]);
+	// Remove entries with lower distance and larger time
+	Moves lm2 = {lm[0]};
 	for (size_t i = 1; i < lm.size(); ++i) {
 		if (lm2[lm2.size() - 1].t > lm[i].t) {
 			lm2.push_back(lm[i]);
 		}
 	}
-
-	// for (size_t i = 1; i < lm.size(); ++i) {
-	// 	if (lm[i - 1].t <= lm[i].t) {
-	// 		lm.erase(lm.begin() + i);
-	// 		i--;
-	// 	}
-	// }
 
 	return lm2;
 }
@@ -91,7 +87,7 @@ Num max_distance(Moves &m, Num sip, Num remainingTime) {
 	Moves a(m.begin(), m.begin() + middle);
 	Moves b(m.begin() + middle, m.end());
 
-	Moves lm = max_distance_list(a, sip);
+	Moves lm = max_distance_list(a, remainingTime, sip);
 
 	return max_distance_rec(b, lm, sip, remainingTime, b.size() - 1);
 }
