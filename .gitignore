@@ -3,6 +3,7 @@ main
 **/prog.dSYM
 **/.cx_metadata.json
 **/.gdb_history
+.vagrant/
 
 # CMake stuff
 **/CMakeFiles
