@@ -6,24 +6,33 @@ struct edge {
 	size_t i; long score;
 };
 
-int min_moves(std::vector<std::vector<edge>> &c, size_t k, long score, size_t i) {
-	if (score <= 0) return k;
-	if (k == 0) return -1;
-	if (c[i].size() == 0) return min_moves(c, k, score, 0);
+long max_score(std::vector<std::vector<edge>> &c, std::vector<std::vector<long>> &dp, int k, size_t i);
 
-	int min = -1;
+long max_score_dp(std::vector<std::vector<edge>> &c, std::vector<std::vector<long>> &dp, int k, size_t i) {
+	if (dp[i][k] == 0) dp[i][k] = max_score(c, dp, k, i);
+
+	return dp[i][k];
+}
+
+long max_score(std::vector<std::vector<edge>> &c, std::vector<std::vector<long>> &dp, int k, size_t i) {
+	if (k == 0) return 0;
+	if (c[i].size() == 0) return max_score_dp(c, dp, k, 0);
+
+	long max = 0;
 	for (size_t j = 0; j < c[i].size(); ++j)
-		min = std::max(min, min_moves(c, k - 1, score - c[i][j].score, c[i][j].i));
+		max = std::max(max, max_score_dp(c, dp, k - 1, c[i][j].i) + c[i][j].score);
 
-	return min;
+	return max;
 }
 
 int testcase() {
-	size_t n, m, k; long x; std::cin >> n >> m >> x >> k;
+	size_t n, m; int k; long x; std::cin >> n >> m >> x >> k;
 
 	std::vector<std::vector<edge>> connections(n);
+	std::vector<std::vector<long>> dp(n);
 	for (size_t i = 0; i < n; ++i) {
 		connections[i] = std::vector<edge>(0);
+		dp[i] = std::vector<long>(k + 1);
 	}
 
 	for (size_t i = 0; i < m; ++i) {
@@ -31,9 +40,13 @@ int testcase() {
 		connections[u].push_back({v, p});
 	}
 
-	int moves = min_moves(connections, k, x, 0);
-	if (moves == -1) return -1;
-	return k - moves;
+	for (int i = 0; i < k + 1; ++i)
+		max_score_dp(connections, dp, i, 0);
+
+	for (size_t i = 0; i < dp[0].size(); ++i)
+		if (dp[0][i] >= x) return i;
+
+	return -1;
 }
 
 int main() {
