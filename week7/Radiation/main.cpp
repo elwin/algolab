@@ -52,27 +52,22 @@ bool is_possible(size_t d, Data healthy, Data tumor) {
 
 	Program lp(CGAL::SMALLER, false, 0, false, 0);
 
-	for (size_t i = 0; i < h; ++i) {
+	for (size_t i = 0; i < h; ++i)
 		add_constraints(lp, d, i, healthy[i], 1);
-	}
 
-	for (size_t i = 0; i < t; ++i) {
+	for (size_t i = 0; i < t; ++i)
 		add_constraints(lp, d, i + h, tumor[i], -1);
-	}
 
 	lp.set_l(0, true, 1);
 	Solution s = CGAL::solve_linear_program(lp, ET());
 
-	if (!s.is_infeasible()) {
-		return true;
-	}
+	if (!s.is_infeasible()) return true;
 
 	lp.set_l(0, false, 1);
 	lp.set_u(0, true, -1);
 	s = CGAL::solve_linear_program(lp, ET());
-	if (!s.is_infeasible()) {
-		return true;
-	}
+
+	if (!s.is_infeasible()) return true;
 
 	return false;
 }
