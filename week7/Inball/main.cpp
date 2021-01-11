@@ -1,6 +1,20 @@
-#include <iostream>
-#include <vector>
+// In the 2D case the variables we are optimizing over are x/y and r, the center
+// and the radius of our ball, with maximal r (which correponds to minimizinig -r).
+// Our constaints can be given by making sure that r is larger than the smallest
+// disitance between the center and any line, which corresponds to the following:
+//
+//  (ax + by + c) / sqrt(a^2 + b^2) >= r
+// <=>
+//  sqrt(a^2 + b^2) * r - ax - by <= c
+//
+// as given by this [1] formula.
+// Furthermore, we add a lower bound of 0 to r to make sure it's positive.
+//
+// The d-dimension case can be solved accordingly.
+//
+// [1] https://math.stackexchange.com/a/275533
 
+#include <iostream>
 #include <CGAL/QP_models.h>
 #include <CGAL/QP_functions.h>
 #include <CGAL/Gmpz.h>
@@ -15,46 +29,51 @@ typedef CGAL::Gmpz ET;
 typedef CGAL::Quadratic_program<IT> Program;
 typedef CGAL::Quadratic_program_solution<ET> Solution;
 
-int testcase() {
+void testcase(size_t n, size_t d) {
 	// create an LP with Ax <= b, lower bound 0 and no upper bounds
 	Program lp (CGAL::SMALLER, false, 0, false, 0);
 
-	// set the coefficients of A and b
 	const int R = 0;
-	const int X = 1;
-	const int Y = 2;
-	
-	lp.set_a(R, 0, 1); lp.set_a(X, 0,  1); lp.set_a(Y, 0,  0); lp.set_b(0, 0);  //  r - x0 <= 0
-	lp.set_a(R, 1, 1); lp.set_a(X, 1,  0); lp.set_a(Y, 1,  1); lp.set_b(1, 0);  //  r - y0 <= 0
-	lp.set_a(R, 2, 5); lp.set_a(X, 2, -3); lp.set_a(Y, 2, -4); lp.set_b(2, 12); //  5r - 3x0 - 4y0 <= 7
+
+	for (size_t i = 0; i < n; ++i) {
+		double sum = 0;
+		for (size_t j = 0; j < d; ++j) {
+			int next; std::cin >> next;
+			sum += next * next;
+			lp.set_a(j + 1, i, -next);
+		}
+
+		int b; std::cin >> b;
+
+		lp.set_a(0, i, std::sqrt(sum));
+		lp.set_b(i, b);
+	}
 
 	lp.set_l(R, true, 0);
 
 	// objective function
-	lp.set_c(R, -1); // -R
+	lp.set_c(R, -1);
 
 	// solve the program, using ET as the exact type
 	Solution s = CGAL::solve_linear_program(lp, ET());
 
-	if (!s.is_optimal()) return -1;
+	if (s.is_unbounded()) {
+		std::cout << "inf" << std::endl; return;
+	} else if (!s.is_optimal()) {
+		std::cout << "none" << std::endl; return;
+	}
 
 	Solution::Variable_value_iterator opt = s.variable_values_begin();
 	CGAL::Quotient<ET> res = *opt;
-	// std::cout << res.numerator() << std::endl;
-
-	// std::cout << s << std::endl;
-
-	return res.numerator().to_double();
- 	// return res.numerator();
+	std::cout << res.numerator() / res.denominator() << std::endl;
 }
 
 int main() {
 	std::ios_base::sync_with_stdio(false);
-	size_t t = 1;
-	// size_t t; std::cin >> t;
-	while (t--) {
-		int out = testcase();
-		if (out < 0) std::cout << "no" << std::endl;
-		else std::cout << out << std::endl;
+	size_t n, d; std::cin >> n;
+	while (n > 0) {
+		std::cin >> d;
+		testcase(n, d);
+		std::cin >> n;
 	}
 }
