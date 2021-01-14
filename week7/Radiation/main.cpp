@@ -92,6 +92,7 @@ int testcase() {
 		return 0;
 	}
 
+	// improve with binary search
 	for (size_t d = 1; d <= 30; ++d) {
 		if (is_possible(d, healthy, tumor)) {
 			return d;
