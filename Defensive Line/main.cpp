@@ -1,3 +1,20 @@
+// For this problem we can use DP but need to make sure to bring our
+// data in a suitable form.
+//
+// 1. For a given start of the attack it is always fixed how many defenders
+//  need to be added, thus we can precompute this mapping in linear time
+//  to avoid calculating this information over and over again.
+//  Our mapping should have the following form, for each location
+//  where the start of an attack is possible:
+//   - start of the attack
+//   - end of the attack
+//   - pointer to next attack that is possible, if this attack is taken
+//  we can infer this information efficiently using a sliding window approach.
+//
+// 2. Once we have this information, we can simply make DP over this list of
+//  possible attacks: At each point, we either make an attack and calculate
+//  the score from where the pointer leads us, or we do not make an attack
+//  and calculate the score from the next possible attack location.
 #include <iostream>
 #include <vector>
 
