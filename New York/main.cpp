@@ -9,6 +9,8 @@
 // multiset (and perhaps sets in general) are sorted, thus
 // we can use this to efficiently retrieve the min and max
 // temperature.
+// Also, remember from which points we already started and
+// abort when encountering such points.
 
 #include <iostream>
 #include <vector>
@@ -31,8 +33,9 @@ void testcase() {
 	}
 
 	std::vector<bool> possible_start(n);
+	std::vector<bool> visited(n);
 	for (size_t i = 0; i < n; ++i) {
-		if (!leaf[i]) continue;
+		if (!leaf[i] || visited[i]) continue;
 
 		std::multiset<size_t> temperature_window;
 		size_t start = i;
@@ -46,6 +49,7 @@ void testcase() {
 		if (temperature_window.size() != m) continue;
 
 		{
+			visited[start] = true;
 			size_t min = *(temperature_window.begin());
 			size_t max = *(--temperature_window.end());
 			if (max - min <= k) possible_start[end] = true;
@@ -54,6 +58,8 @@ void testcase() {
 		while (reverse[end] > 0) {
 			temperature_window.erase(temperature_window.find(temperatures[start]));
 			start = reverse[start] - 1;
+			if (visited[start]) break;
+			visited[start] = true;
 
 			end = reverse[end] - 1;
 			temperature_window.insert(temperatures[end]);
