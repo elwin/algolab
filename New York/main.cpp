@@ -1,41 +1,76 @@
+// The graph can be treated as a tree, thus we can start at the leaves
+// and work our way upwards. This has the benefit that we will not
+// encounter any branches (and perhaps some other benefits, not
+// entirely sure though).
+// To pass all test-sets we need to run in roughly linear time. This
+// can be done by using a sliding window approach and keep track of
+// the length (i.e. only start sliding once we reached the desired
+// lenght) and all the temperatures of the window. Apparently,
+// multiset (and perhaps sets in general) are sorted, thus
+// we can use this to efficiently retrieve the min and max
+// temperature.
+
 #include <iostream>
 #include <vector>
-
-bool possible(size_t cur, size_t l, size_t min, size_t max, size_t risk, std::vector<size_t> &t, std::vector<std::vector<size_t>> &c) {
-	min = std::min(min, t[cur]);
-	max = std::max(max, t[cur]);
-	if (max - min > risk) return false;
-
-	if (l <= 1) return true;
-
-	for (size_t neighbor : c[cur]) {
-		if (possible(neighbor, l - 1, min, max, risk, t, c)) return true;
-	}
-
-	return false;
-}
+#include <set>
 
 void testcase() {
-	std::ios_base::sync_with_stdio(false);
 	size_t n, m, k; std::cin >> n >> m >> k;
 
 	std::vector<size_t> temperatures(n);
-	std::vector<std::vector<size_t>> connections(n);
+	std::vector<size_t> reverse(n);
 	for (size_t i = 0; i < n; ++i) {
 		std::cin >> temperatures[i];
-		connections[i] = std::vector<size_t>(0);
 	}
 
+	std::vector<bool> leaf(n, true);
 	for (size_t i = 0; i < n - 1; ++i) {
 		size_t u, v; std::cin >> u >> v;
-		connections[u].push_back(v);
+		reverse[v] = u + 1; // We treat the 0-value as non-existent
+		leaf[u] = false;
+	}
+
+	std::vector<bool> possible_start(n);
+	for (size_t i = 0; i < n; ++i) {
+		if (!leaf[i]) continue;
+
+		std::multiset<size_t> temperature_window;
+		size_t start = i;
+		size_t end = i;
+		temperature_window.insert(temperatures[end]);
+		while (reverse[end] > 0 && temperature_window.size() < m) {
+			end = reverse[end] - 1;
+			temperature_window.insert(temperatures[end]);
+		}
+
+		if (temperature_window.size() != m) continue;
+
+		{
+			size_t min = *(temperature_window.begin());
+			size_t max = *(--temperature_window.end());
+			if (max - min <= k) possible_start[end] = true;
+		}
+
+		while (reverse[end] > 0) {
+			temperature_window.erase(temperature_window.find(temperatures[start]));
+			start = reverse[start] - 1;
+
+			end = reverse[end] - 1;
+			temperature_window.insert(temperatures[end]);
+
+			size_t min = *(temperature_window.begin());
+			size_t max = *(--temperature_window.end());
+			if (max - min > k) continue;
+
+			possible_start[end] = true;
+		}
 	}
 
 	bool can_do = false;
 	for (size_t i = 0; i < n; ++i) {
-		if (possible(i, m, temperatures[i], temperatures[i], k, temperatures, connections)) {
-			can_do = true;
+		if (possible_start[i]) {
 			std::cout << i << " ";
+			can_do = true;
 		}
 	}
 
@@ -44,6 +79,7 @@ void testcase() {
 }
 
 int main() {
+	std::ios_base::sync_with_stdio(false);
 	size_t t; std::cin >> t;
 	while (t--) testcase();
 }
