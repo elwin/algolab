@@ -1,3 +1,16 @@
+// This problem can be solved by
+//  1. Figure out the closest gang member for each agent
+//  2. Construct a LP problem to figuer out the minimum
+//     amount of money that needs to be spent
+// Some crucial points:
+//  - The closest member can be found efficiently using Delaunay
+//  - Each gang member shall only be guarded by at most one agent,
+//    namely the one with the lowest wage of all possible agents
+//  - Since we're only interested, whether an assignment with
+//    cost lower than Holmes is possible, we can encode this
+//    directly in our LP formulation to make it slightly
+//    more efficient
+
 #include <iostream>
 #include <vector>
 #include <limits>
@@ -35,35 +48,19 @@ struct agent {
 	size_t wage;
 };
 
-size_t squared_distance(int x0, int y0, int x1, int y1) {
-	return (x0 - x1) * (x0 - x1) + (y0 - y1) * (y0 - y1);
-}
-
-size_t closest_member(agent a, std::vector<member> &members) {
-	size_t distance = std::numeric_limits<size_t>::max();
-	size_t index = 0;
-	for (size_t i = 0; i < members.size(); i++) {
-		member m = members[i];
-		int new_dist = squared_distance(a.x, a.y, m.x, m.y);
-		if (new_dist < distance) {
-			distance = new_dist;
-			index = i;
-		}
-	}
-
-	return index;
-}
-
 bool testcase() {
 	size_t z, u, v, w; std::cin >> z >> u >> v >> w;
 	size_t a, g; std::cin >> a >> g;
 
 	std::vector<member> members(g);
 	std::vector<K::Point_2> points(g);
+	std::map<K::Point_2, size_t> mapping;
 	for (size_t i = 0; i < g; ++i) {
 		int x, y; size_t u2, v2, w2; std::cin >> x >> y >> u2 >> v2 >> w2;
 		members[i] = {x, y, u2, v2, w2};
-		points[i] = K::Point_2(x, y);
+		K::Point_2 pt(x, y);
+		points[i] = pt;
+		mapping[pt] = i;
 	}
 
 	Triangulation t;
@@ -74,23 +71,17 @@ bool testcase() {
 	for (size_t i = 0; i < a; ++i) {
 		int x, y; size_t z; std::cin >> x >> y >> z;
 		agents[i] = {x, y, z};
-		size_t j = closest_member(agents[i], members);
+
+		K::Point_2 p = t.nearest_vertex(K::Point_2(x, y))->point();
+		size_t j = mapping[p];
+
 		if (member_agent[j] < 0 || agents[member_agent[j]].wage > agents[i].wage) {
 			member_agent[j] = i;
 		}
 	}
 
-	// for (size_t i = 0; i < g; ++i) {
-	// 	std::cout << i << " -> " << member_agent[i] << std::endl;
-	// }
-
 	// create an LP with Ax <= b, lower bound 0 and no upper bounds
-	Program lp (CGAL::LARGER, true, 0, true, 24);
-
-	// for (int i = 0; i < a; ++i) {
-	// 	lp.set_u(i, true, 24);
-	// 	lp.set_l(i, true, 0);
-	// }
+	Program lp (CGAL::SMALLER, true, 0, true, 24);
 
 	for (size_t i = 0; i < g; ++i) {
 		if (member_agent[i] < 0) continue;
@@ -98,24 +89,26 @@ bool testcase() {
 		member m = members[i];
 		agent a = agents[member_agent[i]];
 
-		lp.set_a(i, 0, m.u);
-		lp.set_a(i, 1, m.v);
-		lp.set_a(i, 2, m.w);
+		lp.set_a(member_agent[i], 0, -m.u);
+		lp.set_a(member_agent[i], 1, -m.v);
+		lp.set_a(member_agent[i], 2, -m.w);
 
-		lp.set_c(i, a.wage);
+		lp.set_c(member_agent[i], a.wage);
 	}
 
-	lp.set_b(0, u);
-	lp.set_b(1, v);
-	lp.set_b(2, w);
+	lp.set_b(0, -u);
+	lp.set_b(1, -v);
+	lp.set_b(2, -w);
+
+	for (size_t i = 0; i < a; ++i) {
+		lp.set_a(i, 3, agents[i].wage);
+	}
+
+	lp.set_b(3, z);
 
 	Solution s = CGAL::solve_linear_program(lp, ET());
-	// return !s.is_infeasible();
 
-	if (s.is_infeasible()) return false;
-
-	return CGAL::to_double(s.objective_value()) <= z;
-
+	return !s.is_infeasible();
 }
 
 int main() {
