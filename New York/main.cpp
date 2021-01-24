@@ -11,6 +11,7 @@
 // temperature.
 // Also, remember from which points we already started and
 // abort when encountering such points.
+// Slightly inspired by daniCh8's solution
 
 #include <iostream>
 #include <vector>
@@ -44,35 +45,27 @@ void testcase() {
 		std::multiset<size_t> temp_window;
 		temp_window.insert(temperatures[end]);
 
-		while (temp_window.size() < m && end > 0) {
-			end = reverse[end];
-			temp_window.insert(temperatures[end]);
-			min = std::min(min, temperatures[end]);
-			max = std::max(max, temperatures[end]);
-		}
-
-		if (temp_window.size() < m) continue;
-
 		while (true) {
-			if (max - min <= k) startable[end] = true;
+			if (max - min <= k && temp_window.size() == m)
+				startable[end] = true;
+
+			if (max - min > k || temp_window.size() == m) {
+				visited[start] = true;
+
+				temp_window.erase(temp_window.find(temperatures[start]));
+				start = reverse[start];
+				if (visited[start]) break;
+			}
 
 			if (end == 0) break;
-
+			
 			end = reverse[end];
 			temp_window.insert(temperatures[end]);
-
-			temp_window.erase(temp_window.find(temperatures[start]));
-			start = reverse[start];
-
-			if (visited[start]) break;
 
 			min = *(temp_window.begin());
 			max = *(--temp_window.end());
-
-			visited[start] = true;
 		}
 	}
-
 
 	bool can_do = false;
 	for (size_t i = 0; i < n; ++i) {
