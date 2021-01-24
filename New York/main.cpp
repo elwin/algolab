@@ -28,53 +28,55 @@ void testcase() {
 	std::vector<bool> leaf(n, true);
 	for (size_t i = 0; i < n - 1; ++i) {
 		size_t u, v; std::cin >> u >> v;
-		reverse[v] = u + 1; // We treat the 0-value as non-existent
+		reverse[v] = u;
 		leaf[u] = false;
 	}
 
-	std::vector<bool> possible_start(n);
 	std::vector<bool> visited(n);
+	std::vector<bool> startable(n);
+
 	for (size_t i = 0; i < n; ++i) {
 		if (!leaf[i] || visited[i]) continue;
+		visited[i] = true;
 
-		std::multiset<size_t> temperature_window;
-		size_t start = i;
-		size_t end = i;
-		temperature_window.insert(temperatures[end]);
-		while (reverse[end] > 0 && temperature_window.size() < m) {
-			end = reverse[end] - 1;
-			temperature_window.insert(temperatures[end]);
+		size_t start = i; size_t end = start;
+		size_t min = temperatures[end]; size_t max = temperatures[end];
+		std::multiset<size_t> temp_window;
+		temp_window.insert(temperatures[end]);
+
+		while (temp_window.size() < m && end > 0) {
+			end = reverse[end];
+			temp_window.insert(temperatures[end]);
+			min = std::min(min, temperatures[end]);
+			max = std::max(max, temperatures[end]);
 		}
 
-		if (temperature_window.size() != m) continue;
+		if (temp_window.size() < m) continue;
 
-		{
-			visited[start] = true;
-			size_t min = *(temperature_window.begin());
-			size_t max = *(--temperature_window.end());
-			if (max - min <= k) possible_start[end] = true;
-		}
+		while (true) {
+			if (max - min <= k) startable[end] = true;
 
-		while (reverse[end] > 0) {
-			temperature_window.erase(temperature_window.find(temperatures[start]));
-			start = reverse[start] - 1;
+			if (end == 0) break;
+
+			end = reverse[end];
+			temp_window.insert(temperatures[end]);
+
+			temp_window.erase(temp_window.find(temperatures[start]));
+			start = reverse[start];
+
 			if (visited[start]) break;
+
+			min = *(temp_window.begin());
+			max = *(--temp_window.end());
+
 			visited[start] = true;
-
-			end = reverse[end] - 1;
-			temperature_window.insert(temperatures[end]);
-
-			size_t min = *(temperature_window.begin());
-			size_t max = *(--temperature_window.end());
-			if (max - min > k) continue;
-
-			possible_start[end] = true;
 		}
 	}
 
+
 	bool can_do = false;
 	for (size_t i = 0; i < n; ++i) {
-		if (possible_start[i]) {
+		if (startable[i]) {
 			std::cout << i << " ";
 			can_do = true;
 		}
