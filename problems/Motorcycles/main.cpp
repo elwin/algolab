@@ -31,13 +31,10 @@ bool smaller_angle_abs(biker a, biker b) {
 	return boost::multiprecision::abs(a.y1 - a.y0) * b.x1 < boost::multiprecision::abs(b.y1 - b.y0) * a.x1;
 }
 
-bool equal_angle(biker a, biker b) {
-	return (a.y1 - a.y0) * b.x1 == (b.y1 - b.y0) * a.x1;
-}
-
 void testcase() {
 	size_t n; std::cin >> n;
 	std::vector<biker> bikers(n);
+	std::vector<bool> winners(n);
 	for (size_t i = 0; i < n; ++i) {
 		biker b;
 		std::cin >> b.y0 >> b.x1 >> b.y1;
@@ -47,82 +44,41 @@ void testcase() {
 
 	std::sort(bikers.begin(), bikers.end(), smaller_angle_abs);
 
-	// for (size_t i = 1; i < bikers.size(); ++i) {
-	// 	if (!equal_angle(bikers[i - 1], bikers[i])) {
-	// 		std::cout << "not equal" << std::endl;
-	// 	} else {
-	// 		std::cout << "equal" << std::endl;
-	// 	}
-	// }
+	biker leftmost = bikers[0];
+	biker rightmost = bikers[0];
+	winners[bikers[0].id] = true;
 
+	for (size_t i = 1; i < bikers.size(); ++i) {
+		biker b = bikers[i];
+		if (direction(b) == 0) {
+			winners[b.id] = true;
 
-	// for (size_t i; i < bikers.size(); i++) {
-	// 	biker b = bikers[i]
-	// 	// std::cout << b.y0 << " " << b.x1 << " " << b.y1 << std::endl;
-	// 	auto angle = b.y1.convert_to<double>() - b.y0.convert_to<double>() / b.x1.convert_to<double>();
-	// 	std::cout << angle << std::endl;
-	// }
+			if (b.y0 > leftmost.y0) leftmost = b;
+			if (b.y0 < rightmost.y0) leftmost = b;
 
-	std::map<boost::multiprecision::int128_t, biker> winners;
-
-	for (biker b : bikers) {
-		if (winners.size() == 0 || direction(b) == 0) {
-			winners[b.y0] = b;
 			continue;
 		}
 
 		if (direction(b) == -1) {
-			biker c = (--winners.end())->second;
-			// if (direction(b) != direction(c)) {
-			// 	winners[b.y0] = b;
-			// 	continue;
-			// }
-
-			// if (b.y0 > c.y0 || equal_angle(b, c)) {
-			// 	winners[b.y0] = b;
-			// 	continue;
-			// }
-
-
-			if (b.y0 > c.y0) {
-				winners[b.y0] = b;
+			if (b.y0 > leftmost.y0) {
+				winners[b.id] = true;
+				leftmost = b;
 				continue;
 			}
 		}
 
 		if (direction(b) == 1) {
-			biker c = winners.begin()->second;
-			// if (b.y0 < c.y0 && direction(b) != direction(c)) {
-			// 	winners[b.y0] = b;
-			// 	continue;
-			// }
-
-			if (b.y0 < c.y0) {
-				winners[b.y0] = b;
+			if (b.y0 < rightmost.y0) {
+				winners[b.id] = true;
+				rightmost = b;
 				continue;
 			}
-
-			// if (b.y0 < c.y0 || equal_angle(b, c)) {
-			// 	winners[b.y0] = b;
-			// 	continue;
-			// }
 		}
-
-
-		// for (auto it = winners.begin(); it != winners.end(); it++) {
-		// 	std::cout << it->second.id << " " ;
-		// }
-		// std::cout << std::endl;
 	}
 
-	std::vector<size_t> winner_sorted;
-	for (auto it = winners.begin(); it != winners.end(); it++) {
-		winner_sorted.push_back(it->second.id);
-	}
-	std::sort(winner_sorted.begin(), winner_sorted.end());
-
-	for (size_t b : winner_sorted) {
-		std::cout << b << " ";
+	for (size_t i = 0; i < n; i++) {
+		if (winners[i])
+			std::cout << i << " ";
 	}
 	std::cout << std::endl;
 }
