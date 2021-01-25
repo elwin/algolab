@@ -16,7 +16,6 @@ int direction(biker a) {
 	return 0;
 }
 
-
 bool smaller_angle_abs(biker a, biker b) {
 	if ((a.y1 - a.y0) * b.x1 == (b.y1 - b.y0) * a.x1) {
 		if (direction(a) == -1)
@@ -52,28 +51,18 @@ void testcase() {
 		biker b = bikers[i];
 		if (direction(b) == 0) {
 			winners[b.id] = true;
-
-			if (b.y0 > leftmost.y0) leftmost = b;
-			if (b.y0 < rightmost.y0) leftmost = b;
-
-			continue;
-		}
-
-		if (direction(b) == -1) {
+		} else if (direction(b) == -1) {
 			if (b.y0 > leftmost.y0) {
 				winners[b.id] = true;
-				leftmost = b;
-				continue;
 			}
-		}
-
-		if (direction(b) == 1) {
+		} else if (direction(b) == 1) {
 			if (b.y0 < rightmost.y0) {
 				winners[b.id] = true;
-				rightmost = b;
-				continue;
 			}
 		}
+		
+		if (b.y0 > leftmost.y0) leftmost = b;
+		if (b.y0 < rightmost.y0) rightmost = b;
 	}
 
 	for (size_t i = 0; i < n; i++) {
