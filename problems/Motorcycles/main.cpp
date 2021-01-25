@@ -1,21 +1,37 @@
+// For this problem we notice that when comparing two riders that
+// ride in the same direction (i.e. up or down on the y-axis),
+// the one with the steeper angle will eventually crash into
+// the other. Thus we can order the riders according to their
+// angle in relation to the x-axis and greedily add riders
+// that won't crash. Regardless whether a rider will crash
+// or not, we keep track of the leftmost (or rather highest)
+// and rightmost (lowest) rider, since those will be the
+// only relevant riders for the future ones.
+// Nasty: long didn't cut it since multiplcation in this case
+// would lead to overflow, thus weird 128 bit numbers.
+
 #include <iostream>
 #include <vector>
 #include <algorithm>
 #include <map>
 #include <boost/multiprecision/cpp_int.hpp>
 
-
 struct biker {
 	boost::multiprecision::int128_t y0, x1, y1;
 	size_t id;
 };
 
+// -1: Riding up
+//  1: Riding down
+//  0: Riding horizontal
 int direction(biker a) {
 	if (a.y1 > a.y0) return -1;
 	if (a.y1 < a.y0) return  1;
 	return 0;
 }
 
+// Order according to absolute angle, 
+// on equality order according to direction,
 bool smaller_angle_abs(biker a, biker b) {
 	if ((a.y1 - a.y0) * b.x1 == (b.y1 - b.y0) * a.x1) {
 		if (direction(a) == -1)
