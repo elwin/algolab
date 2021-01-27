@@ -1,3 +1,13 @@
+// This problem is a bit of a weird one. At first I attempted it using DP,
+// which might seem reasonable since the variables are fairly bounded
+// (s <= 10, cars <= 100 * 10). However, at some point I gave up since
+// I couldn't figure out how to properly memoize vectors (again,
+// bounded vectors).
+// Anyhow, flows seem the way to go: Keep a node for each station at
+// every possible time point, with flows that correspond to cars being
+// moved. Generally, every path has cost 0, except bookings have negative
+// costs. This can be avoided however by adding a fixed offset to all
+// edges.
 #include <iostream>
 #include <vector>
 
@@ -39,8 +49,9 @@ class edge_adder {
   }
 };
 
-const size_t infinite = 100000;
-const size_t max_cost = 100 * 1000;
+const size_t infinite = 999999;
+const size_t max_cost = 10 * 100;
+const size_t max_time = 100000;
 
 struct booking {
 	size_t depart, arrival;
@@ -48,80 +59,88 @@ struct booking {
 	size_t profit;
 };
 
-size_t idx(size_t station, size_t time, size_t s) {
-	return station + time * s;
-}
-
 long testcase() {
 	size_t n, s; std::cin >> n >> s;
 
 	std::vector<size_t> stations(s);
 	std::vector<booking> bookings(n);
-	std::set<size_t> timeslots;
-	size_t cars = 0;
+
+	// For each station, keep a mapping from time to index
+	std::vector<std::map<size_t, size_t>> station_times(s, std::map<size_t, size_t>());
+	size_t cars = 0; // Number of total cars
+	size_t idx = 0;  // Index used in graph
+
+	size_t source = idx++;
+	size_t target = idx++;
 
 	// Add transition edges
 	for (size_t i = 0; i < s; ++i) {
 		std::cin >> stations[i];
 		cars += stations[i];
+
+		// Add starting and end-point for all stations,
+		// such that the total cost is the same (i.e. max_time).
+		station_times[i][0] = idx++;
+		station_times[i][max_time] = idx++;
 	}
+
 
 	for (size_t i = 0; i < n; ++i) {
 		booking b;
 		std::cin >> b.depart >> b.arrival >> b.start >> b.end >> b.profit;
-		b.depart--; b.arrival--;
+		b.depart--; b.arrival--; // Convert to 0-indexing
 		bookings[i] = b;
 
-		timeslots.insert(b.start);
-		timeslots.insert(b.end);
-		// adder.add_edge(idx(depart, start), idx(arrival, end), 1, (end - start) * max_cost - profit);
+		// If station / time pair has not been seen yet, add it to working set
+		if (station_times[b.depart].find(b.start) == station_times[b.depart].end())
+			station_times[b.depart][b.start] = idx++;
+
+		if (station_times[b.arrival].find(b.end) == station_times[b.arrival].end())
+			station_times[b.arrival][b.end] = idx++;
 	}
 
-	std::map<size_t, size_t> timeslot_mapping;
-	{
-		size_t i = 0;
-		for (size_t slot : timeslots) {
-			timeslot_mapping[slot] = i++;
-		}
-	}
-
-	size_t source = timeslots.size() * s;
-	size_t target = timeslots.size() * s + 1;
-
-
-	graph G(target + 1);
+	graph G(idx);
 	edge_adder adder(G);
+
 	for (size_t i = 0; i < s; ++i) {
-		adder.add_edge(source, idx(i, 0, s), stations[i], 0);
 
-		for (size_t j = 1; j < timeslots.size(); ++j)
-			adder.add_edge(idx(i, j - 1, s), idx(i, j, s), infinite, max_cost);
+		auto it = station_times[i].begin();
+		size_t cur_idx = it->second;
+		size_t cur_time = (it++)->first;
 
-		adder.add_edge(idx(i, timeslots.size() - 1, s), target, infinite, 0);
+		// Add edges from source to first time point (i.e. time = 0)
+		adder.add_edge(source, cur_idx, stations[i], 0);
+
+		for (; it != station_times[i].end(); it++) {
+			size_t next_idx = it->second;
+			size_t next_time = it->first;
+
+			// Add edges inbetween times, cost corresponds to time difference
+			adder.add_edge(cur_idx, next_idx, infinite, max_cost * (next_time - cur_time));
+
+			cur_idx = next_idx;
+			cur_time = next_time;
+		}
+
+		// Add edges from last time point (i.e. time = max_time) to target
+		adder.add_edge(cur_idx, target, infinite, 0);
 	}
-
-	// for (auto slot : timeslots) {
-	// 	std::cout << slot << " (" << timeslot_mapping[slot] << ") ";
-	// }
-	// std::cout << std::endl;
 
 	for (size_t i = 0; i < n; ++i) {
 		booking b = bookings[i];
-		// std::cout << i << std::endl;
-		adder.add_edge(
-			idx(b.depart, timeslot_mapping[b.start], s),
-			idx(b.arrival, timeslot_mapping[b.end], s),
-			1,
-			max_cost * (timeslot_mapping[b.end] - timeslot_mapping[b.start]) - b.profit
-		);
 
-		// std::cout << max_cost * (timeslot_mapping[b.end] - timeslot_mapping[b.start]) - b.profit << std::endl;
+		size_t start = station_times[b.depart][b.start];
+		size_t end = station_times[b.arrival][b.end];
+
+		// Add edges for trips - cost corresponds to profit generated,
+		// (or rather the inverse of it)
+		adder.add_edge(start, end, 1, max_cost * (b.end - b.start) - b.profit);
 	}
 
 	boost::successive_shortest_path_nonnegative_weights(G, source, target);
 	long cost = boost::find_flow_cost(G);
 
-	return (timeslots.size() - 1) * max_cost * cars - cost;
+	return max_time * max_cost * cars - cost;
 }
 
 int main() {
