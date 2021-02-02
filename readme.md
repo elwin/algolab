@@ -27,6 +27,6 @@ make && ./main < tests/sample.in
 
 To compare the actual with the expected result, I use
 ```bash
-make && diff <(./main < tests/test1.in) tests/test1.out
+make && ./main < tests/test1.in | diff - tests/test1.out
 ```
 When there's no output, all results match.
