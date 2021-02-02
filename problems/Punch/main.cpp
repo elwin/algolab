@@ -7,38 +7,23 @@ typedef std::vector<std::pair<size_t, size_t>> D;
 
 // <cost, variation>
 typedef std::pair<int, int> Res;
-typedef std::vector<std::vector<Res>> DP;
 
-Res min_cost(D &drinks, size_t i, size_t cur, size_t k, DP &dp);
+// index -> remaining -> <subsequent, non_subsequent>
+typedef std::vector<std::vector<std::pair<Res, Res>>> DP;
 
-Res min_cost_dp(D &drinks, size_t i, size_t cur, size_t k, DP &dp) {
-	if (cur >= k) return min_cost(drinks, i, cur, k, dp);
-	if (dp[i][cur].first == 0) {
-		dp[i][cur] = min_cost(drinks, i, cur, k, dp);
-	}
-
-	return dp[i][cur];
-}
-
-Res min_cost(D &drinks, size_t i, size_t cur, size_t k, DP &dp) {
-	if (cur >= k) return {0, 0};
-	if (i == drinks.size()) return {-1, 0};
+Res min_cost(D &drinks, size_t i, int remaining, bool subsequent, DP &dp) {
+	if (remaining <= 0) return {0, 0};
+	if (i == drinks.size()) return {10000, 0};
 
 	auto d = drinks[i];
-	Res min = {std::numeric_limits<int>::max(), 0};
-	for (size_t j = 0; ; ++j) {
-		Res next = min_cost_dp(drinks, i + 1, cur + d.second * j, k, dp);
-		if (next.first == -1) continue;
-		
-		next.first += int(d.first * j);
-		if (j > 0) next.second--;
 
-		min = std::min(min, next);
+	Res take = min_cost(drinks, i, remaining - d.second, true, dp);
+	take.first += d.first;
+	if (!subsequent) take.second--;
 
-		if (cur + d.second * j > k) break;
-	}
+	Res ignore = min_cost(drinks, i + 1, remaining, false, dp);
 
-	return min;
+	return std::min(take, ignore);
 }
 
 void testcase() {
@@ -48,9 +33,9 @@ void testcase() {
 		std::cin >> drinks[i].first >> drinks[i].second;
 	}
 
-	DP dp = DP(n + 1, std::vector<Res>(k + 1));
+	DP dp(n, std::vector<std::pair<Res, Res>>(k + 1));
 
-	Res r = min_cost_dp(drinks, 0, 0, k, dp);
+	Res r = min_cost(drinks, 0, k, false, dp);
 
 	std::cout << r.first << " " << -r.second << std::endl;
 }
