@@ -1,3 +1,23 @@
+// After a given amount of time has passed, the largest possible score
+// that can be achieved corresponds to the either the time itself
+// or the largest connected subcomponent in the remaining graph,
+// whichever is smaller.
+// The largest connected subcomponent can be retrieved using
+// BFS after we've constructed a graph (either quadratically
+// or logarithmically using Delanauy, since we care for the
+// closest neighbors anyway).
+// Now to figure out how much time should pass we can use
+// binary search: The optimum is when score = time, since
+// at that point increasing time would decrease the availablee
+// nodes and thus score, decreasing time would decrease the
+// maximum possible score as well (since it is capped
+// using min(score, time)).
+// Note that score is a (non-strictly) monotonic increasing
+// function. Now, whenever the score is lower than time,
+// we can try to get closer to the maximum by
+// decreasing the maximum. Conversely, when
+// the score is higher than time, we can
+// get closer to the optimum by increaing time.
 #include <iostream>
 #include <vector>
 #include <queue>
@@ -49,7 +69,7 @@ size_t possible(std::vector<K::Point_2> &points, size_t time, long sqrt_dist) {
 		max_score = std::max(max_score, cur_score);
 	}
 
-	return std::min(max_score, time);
+	return max_score;
 }
 
 size_t testcase() {
@@ -60,13 +80,35 @@ size_t testcase() {
 		points[i] = K::Point_2(x, y);
 	}
 
-	size_t max = 0;
-	for (size_t time = n / 2; time > 0; time--) {
-		std::cout << n << ": " << possible(points, time, r * r) << std::endl;
-		max = std::max(max, possible(points, time, r * r));
+	size_t low = 1; size_t high = n / 2;
+	while (low < high) {
+		size_t mid = low + (high - low) / 2;
+		size_t score = possible(points, mid, r * r);
+
+		// Found optimimum - can't do better than that
+		// Increasing time would decrease the score,
+		// decreasing time would decrease it naturally as well
+		if (score == mid) return score;
+
+		// Score is too low, can potentially improve by
+		// lowering time
+		if (score < mid) {
+			high = mid - 1;
+		}
+
+		// Score is too high, looking for closer solution
+		// by increasing time
+		else {
+			low = mid + 1;
+		}
 	}
 
-	return max;
+	// Handle off by one error or so
+	size_t score1 = std::min(low - 1, possible(points, low - 1, r * r));
+	size_t score2 = std::min(low, possible(points, low, r * r));
+	size_t score3 = std::min(low + 1, possible(points, low + 1, r * r));
+
+	return std::max(score1, std::max(score2, score3));
 }
 
 int main() {
