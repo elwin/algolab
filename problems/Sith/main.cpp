@@ -62,6 +62,7 @@ size_t testcase() {
 
 	size_t max = 0;
 	for (size_t time = n / 2; time > 0; time--) {
+		std::cout << n << ": " << possible(points, time, r * r) << std::endl;
 		max = std::max(max, possible(points, time, r * r));
 	}
 
