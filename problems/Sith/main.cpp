@@ -4,7 +4,6 @@
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Delaunay_triangulation_2.h>
-#include <CGAL/Triangulation_face_base_with_info_2.h>
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
@@ -13,13 +12,16 @@ typedef CGAL::Triangulation_face_base_2<K> Fb;
 typedef CGAL::Triangulation_data_structure_2<Vb,Fb> Tds;
 typedef CGAL::Delaunay_triangulation_2<K,Tds>  Triangulation;
 
-size_t possible(std::vector<K::Point_2> &points, size_t time, size_t sqrt_dist) {
+size_t possible(std::vector<K::Point_2> &points, size_t time, long sqrt_dist) {
 	Triangulation t;
 	t.insert(points.begin() + time, points.end());
 
 	size_t max_score = 0;
+	for (Triangulation::Vertex_iterator v = t.finite_vertices_begin(); v != t.finite_vertices_end(); ++v) {
+		v->info() = false;
+	}
 
-	for (Triangulation::Vertex_iterator v = t.vertices_begin(); v != t.vertices_end(); ++v) {
+	for (Triangulation::Vertex_iterator v = t.finite_vertices_begin(); v != t.finite_vertices_end(); ++v) {
 
 		if (v->info() == true) continue;
 
@@ -59,7 +61,7 @@ size_t testcase() {
 	}
 
 	size_t max = 0;
-	for (size_t time = 1; time <= n / 2; time++) {
+	for (size_t time = n / 2; time > 0; time--) {
 		max = std::max(max, possible(points, time, r * r));
 	}
 
