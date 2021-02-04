@@ -49,12 +49,16 @@ void testcase() {
 		return;
 	}
 
-	for (size_t k = std::max(b / f, size_t(1)); ; k++) {
-		if (valid(friends, boxes, k)) {
-			std::cout << (k * 3 - 1) << std::endl;
-			return;
-		}
+	size_t low = std::max(b / f, size_t(1));
+	size_t high = b;
+	while (low < high) {
+		size_t mid = low + (high - low) / 2;
+
+		if (valid(friends, boxes, mid)) high = mid;
+		else low = mid + 1;
 	}
+
+	std::cout << (low * 3 - 1) << std::endl;
 }
 
 int main() {
