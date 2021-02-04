@@ -1,7 +1,14 @@
-// ALGOLAB BGL Tutorial 3
-// Code demonstrating 
-// - MinCostMaxFlow with arbitrary edge costs using cycle_canceling
-// - MinCostMaxFlow with non-negative edge costs using successive_shortest_path_nonnegative_weights
+// More or less typical max-flow, min-cost problem with flow set to
+// the number of elephants between each city and cost to... well
+// cost of one elephant.
+// When solving the flow-problem, we'll attempt to get maximum flow,
+// irrespective of cost. Thus, we can constrain the flow (i.e. number
+// of luggage we want to transport) to some number and check whether
+// the costs exceed our budget. We can set this constraint by
+// inserting an edge between source and the actual start
+// with the maximum luggage.
+// The correct luggage number we transport we can figuer out
+// using exponential and binary search.
 
 // Includes
 // ========
@@ -92,13 +99,34 @@ int testcase() {
         if (g.from == from) max_units += g.cap;
     }
 
-    for (size_t i = 1; i <= max_units; i++) {
-        if (costs(guides, c, from, to, i) > budget) {
-            return i - 1;
+    // Exponential search for upper bound
+    size_t low = 0; size_t high = 1;
+    while (true) {
+        size_t cur_costs = costs(guides, c, from, to, high);
+        if (cur_costs < budget) {
+            low = high;
+            high *= 2;
         }
+
+        else if (cur_costs > budget) break;
+        else return high;
     }
 
-    return max_units;
+    // Binary search for correct value
+    while (low < high) {
+        size_t middle = low + (high - low) / 2;
+
+        size_t cur_costs = costs(guides, c, from, to, middle);
+
+        if (cur_costs < budget) low = middle + 1;
+        else if (cur_costs > budget) high = middle - 1;
+        else return middle;
+    }
+
+    // If there's no exact match, our threshold will
+    // be set one too high
+    if (costs(guides, c, from, to, low) > budget) return low - 1;
+    return high;
 }
 
 int main() {
